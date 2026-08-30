@@ -1,0 +1,39 @@
+import {
+  Archive,
+  CalendarDays,
+  ClipboardCheck,
+  LayoutDashboard,
+  Luggage,
+  type LucideIcon,
+} from 'lucide-react';
+
+export interface NavigationItem {
+  label: string;
+  shortLabel: string;
+  to: string;
+  icon: LucideIcon;
+}
+
+export const navigationItems: NavigationItem[] = [
+  { label: '我的旅行', shortLabel: '旅行', to: '/trips', icon: Luggage },
+  {
+    label: '旅行总览',
+    shortLabel: '总览',
+    to: '/overview',
+    icon: LayoutDashboard,
+  },
+  {
+    label: '准备',
+    shortLabel: '准备',
+    to: '/preparation',
+    icon: ClipboardCheck,
+  },
+  {
+    label: '行程',
+    shortLabel: '行程',
+    to: '/itinerary',
+    icon: CalendarDays,
+  },
+  { label: '归档', shortLabel: '归档', to: '/archive', icon: Archive },
+];
+
