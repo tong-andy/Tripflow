@@ -1,6 +1,6 @@
 import { Compass } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { navigationItems } from '../../app/navigation';
+import { desktopNavigationItems } from '../../app/navigation';
 
 export function SidebarNavigation() {
   return (
@@ -22,7 +22,7 @@ export function SidebarNavigation() {
           旅行工作台
         </p>
         <div className="space-y-1.5">
-          {navigationItems.map(({ label, to, icon: Icon }) => (
+          {desktopNavigationItems.map(({ label, to, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -52,4 +52,3 @@ export function SidebarNavigation() {
     </aside>
   );
 }
-

@@ -6,6 +6,7 @@ import { AuthProvider } from './state/AuthProvider';
 import { TripProvider } from './state/TripProvider';
 import { ArchiveProvider } from './state/ArchiveProvider';
 import { NetworkProvider } from './state/NetworkProvider';
+import { ProfileProvider } from './state/ProfileProvider';
 import { registerTripFlowServiceWorker } from './pwa';
 import './styles/index.css';
 
@@ -21,9 +22,11 @@ createRoot(rootElement).render(
   <StrictMode>
     <NetworkProvider><AuthProvider>
       <TripProvider>
-        <ArchiveProvider>
-          <RouterProvider router={router} />
-        </ArchiveProvider>
+        <ProfileProvider>
+          <ArchiveProvider>
+            <RouterProvider router={router} />
+          </ArchiveProvider>
+        </ProfileProvider>
       </TripProvider>
     </AuthProvider></NetworkProvider>
   </StrictMode>,

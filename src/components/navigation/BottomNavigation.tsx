@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { navigationItems } from '../../app/navigation';
+import { bottomNavigationItems } from '../../app/navigation';
 
 export function BottomNavigation() {
   return (
@@ -8,7 +8,7 @@ export function BottomNavigation() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden"
     >
       <div className="mx-auto grid max-w-lg grid-cols-5">
-        {navigationItems.map(({ shortLabel, to, icon: Icon }) => (
+        {bottomNavigationItems.map(({ shortLabel, to, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

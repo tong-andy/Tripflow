@@ -12,7 +12,8 @@ export interface Expense {
 export interface Purchase {
   id: string; tripId: string; date: string; title: string; amount: number;
   currency: string; location: string; recipient: string; notes: string;
-  organized: boolean; createdAt: string; updatedAt: string;
+  organized: boolean; purchased: boolean; includeInExpenses: boolean;
+  createdAt: string; updatedAt: string;
 }
 export interface MediaNote {
   id: string; tripId: string; tripDayId: string | null;

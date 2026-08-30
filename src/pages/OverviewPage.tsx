@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarDays, CheckCircle2, Route } from 'lucide-react';
+import { ArrowUpRight, CalendarCheck2, CalendarDays, CheckCircle2, Route } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -6,6 +6,7 @@ import { NoTripState } from '../components/ui/NoTripState';
 import { getTripStats, sortItineraryItems } from '../domain/trips';
 import { formatDateRange, formatDayDate } from '../lib/formatters';
 import { useTrips } from '../state/useTrips';
+import { getTripStatus } from '../domain/travelMode';
 
 export function OverviewPage() {
   const { selectedTrip, updateTrip, isSaving } = useTrips();
@@ -48,7 +49,7 @@ export function OverviewPage() {
         eyebrow={`${selectedTrip.departureLocation} → ${selectedTrip.destination}`}
         title="旅行总览"
         description={`${selectedTrip.name} · ${formatDateRange(selectedTrip.startDate, selectedTrip.endDate)}`}
-        action={<button type="button" onClick={()=>{setTimezone(selectedTrip.timezone);setTimezoneOpen(!timezoneOpen)}} className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold">时区：{selectedTrip.timezone}</button>}
+        action={<div className="flex flex-wrap gap-2">{getTripStatus(selectedTrip)==='active'?<Link replace to="/today" className="inline-flex items-center gap-2 rounded-xl bg-brand-soft px-4 py-2.5 text-sm font-semibold text-brand"><CalendarCheck2 className="size-4"/>进入今天</Link>:null}<button type="button" onClick={()=>{setTimezone(selectedTrip.timezone);setTimezoneOpen(!timezoneOpen)}} className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold">时区：{selectedTrip.timezone}</button></div>}
       />
 
       {timezoneOpen?<form onSubmit={event=>{event.preventDefault();void updateTrip(selectedTrip.id,{timezone}).then(()=>setTimezoneOpen(false)).catch(()=>undefined)}} className="mt-5 flex flex-col gap-3 rounded-2xl border border-brand/20 bg-brand-soft/50 p-4 sm:flex-row sm:items-end"><label className="flex-1"><span className="field-label">旅行目的地 IANA timezone</span><input aria-label="旅行时区" required value={timezone} onChange={event=>setTimezone(event.target.value)} className="field-input" placeholder="Asia/Tokyo"/></label><button disabled={isSaving} className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-white">{isSaving?'保存中…':'保存时区'}</button></form>:null}

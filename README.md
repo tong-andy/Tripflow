@@ -56,7 +56,7 @@ npm run test:e2e
 | 旅行总览 | `/overview` |
 | 准备 | `/preparation` |
 | 行程 | `/itinerary` |
-| 归档 | `/archive` |
+| 记录 | `/archive` |
 | 登录 | `/login` |
 | 邮件登录回调 | `/auth/callback` |
 

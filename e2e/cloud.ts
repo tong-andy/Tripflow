@@ -17,6 +17,7 @@ interface CloudStore {
   purchases: CloudRow[];
   media_notes: CloudRow[];
   journals: CloudRow[];
+  user_profiles: CloudRow[];
 }
 
 const user = {
@@ -62,6 +63,7 @@ export async function installCloudApiMock(page: Page) {
     purchases: [],
     media_notes: [],
     journals: [],
+    user_profiles: [],
   };
   let idSequence = 0;
   const nextId = (prefix: string) => `${prefix}-${++idSequence}`;
@@ -133,6 +135,7 @@ export async function installCloudApiMock(page: Page) {
         'purchases',
         'media_notes',
         'journals',
+        'user_profiles',
       ].includes(resource)
     ) {
       await json(route, { message: 'Unknown mocked resource' }, 404);
@@ -143,7 +146,22 @@ export async function installCloudApiMock(page: Page) {
     const rows = store[table];
 
     if (method === 'GET') {
-      await json(route, rows);
+      let result = [...rows];
+      for (const field of ['id', 'user_id', 'trip_id'] as const) {
+        const filter = url.searchParams.get(field);
+        if (filter?.startsWith('eq.')) {
+          const expected = filter.slice(3);
+          result = result.filter((row) => row[field] === expected);
+        }
+      }
+      for (const filter of url.searchParams.getAll('date')) {
+        if (filter.startsWith('gte.')) {
+          result = result.filter((row) => String(row.date) >= filter.slice(4));
+        } else if (filter.startsWith('lt.')) {
+          result = result.filter((row) => String(row.date) < filter.slice(3));
+        }
+      }
+      await json(route, result);
       return;
     }
 
@@ -155,8 +173,15 @@ export async function installCloudApiMock(page: Page) {
       const created = inputs.map((input) => {
         const now = timestamp();
         const singular = table === 'preparation_items' ? 'prep' : table === 'itinerary_items' ? 'itinerary' : table.replace(/_items$|s$/,'');
+        const existingProfile = table === 'user_profiles'
+          ? rows.find((candidate) => candidate.user_id === user.id)
+          : undefined;
+        if (existingProfile) {
+          Object.assign(existingProfile, input, { updated_at: now });
+          return existingProfile;
+        }
         const row: CloudRow = {
-          id: nextId(singular),
+          id: table === 'user_profiles' ? user.id : nextId(singular),
           user_id: user.id,
           created_at: now,
           updated_at: now,
@@ -165,6 +190,8 @@ export async function installCloudApiMock(page: Page) {
           status: 'planned',
           organized: false,
           favorite: false,
+          purchased: false,
+          include_in_expenses: true,
           ...input,
         };
         rows.push(row);

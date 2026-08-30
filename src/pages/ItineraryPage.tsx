@@ -1,12 +1,15 @@
-import { ArrowLeft, Clock3, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarCheck2, Clock3, MapPin, Navigation, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ItineraryItemForm } from '../components/itinerary/ItineraryItemForm';
 import { PageHeader } from '../components/ui/PageHeader';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { NoTripState } from '../components/ui/NoTripState';
 import { sortItineraryItems } from '../domain/trips';
+import { externalNavigationUrl, getTripStatus } from '../domain/travelMode';
 import { formatDayDate, formatDuration } from '../lib/formatters';
 import { useTrips } from '../state/useTrips';
+import { useProfile } from '../state/useProfile';
 import type { ItineraryItem, ItineraryStatus } from '../types/trip';
 
 const statusLabels: Record<ItineraryStatus, string> = {
@@ -22,6 +25,7 @@ const statusClasses: Record<ItineraryStatus, string> = {
 };
 
 export function ItineraryPage() {
+  const { profile } = useProfile();
   const {
     selectedTrip,
     addItineraryItem,
@@ -59,6 +63,8 @@ export function ItineraryPage() {
         title="行程"
         description="按天查看旅行安排，保持节奏清晰，也给临时变化留出空间。"
         action={
+          <div className="flex flex-wrap gap-2">
+          {getTripStatus(selectedTrip) === 'active' ? <Link replace to="/today" className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand/20 bg-brand-soft px-4 py-2.5 text-sm font-semibold text-brand"><CalendarCheck2 className="size-4" />进入今天</Link> : null}
           <button
             type="button"
             disabled={isSaving}
@@ -66,7 +72,7 @@ export function ItineraryPage() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white"
           >
             <Plus className="size-4" /> 添加安排
-          </button>
+          </button></div>
         }
       />
 
@@ -148,6 +154,7 @@ export function ItineraryPage() {
                   ) : null}
                 </div>
                 <div className="flex items-center gap-2 sm:justify-end">
+                {item.address ? <a aria-label={`导航到${item.placeName}`} href={externalNavigationUrl(item.address, profile?.defaultMapProvider ?? 'system')} target="_blank" rel="noreferrer" className="grid size-8 place-items-center rounded-lg text-brand hover:bg-brand-soft"><Navigation className="size-3.5" /></a> : null}
                 <label className="sm:text-right">
                   <span className="sr-only">更新 {item.placeName} 状态</span>
                   <select

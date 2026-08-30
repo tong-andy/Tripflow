@@ -2,6 +2,8 @@ import migrationSql from '../../supabase/migrations/20260831000100_create_tripfl
 import cloudMigrationSql from '../../supabase/migrations/20260831000200_create_trip_with_days_function.sql?raw';
 import archiveMigrationSql from '../../supabase/migrations/20260831000300_create_archive.sql?raw';
 import travelModeMigrationSql from '../../supabase/migrations/20260831000400_add_trip_timezone_and_itinerary_address.sql?raw';
+import profileMigrationSql from '../../supabase/migrations/20260831000500_create_user_profiles.sql?raw';
+import recordCenterMigrationSql from '../../supabase/migrations/20260831000600_record_center_preferences_and_purchase_spending.sql?raw';
 
 const tables = [
   'trips',
@@ -98,4 +100,15 @@ describe('Phase 03A archive migration', () => {
 describe('Phase 03B travel mode migration',()=>{
   it('adds a validated IANA timezone and optional itinerary timing/address',()=>{expect(travelModeMigrationSql).toContain('function public.is_valid_timezone');expect(travelModeMigrationSql).toContain('pg_catalog.pg_timezone_names');expect(travelModeMigrationSql).toContain("add column timezone text not null");expect(travelModeMigrationSql).toContain("alter column time drop not null");expect(travelModeMigrationSql).toContain("add column address text not null default ''");});
   it('creates an authenticated timezone-aware atomic trip function',()=>{expect(travelModeMigrationSql).toContain('function public.create_trip_with_days_v2');expect(travelModeMigrationSql).toContain('security invoker');expect(travelModeMigrationSql).toContain('from public, anon');expect(travelModeMigrationSql).toContain('to authenticated');});
+});
+
+describe('Phase 03B.2 profile migration',()=>{
+  it('creates user-scoped preferences with RLS and no anonymous access',()=>{expect(profileMigrationSql).toContain('create table public.user_profiles');expect(profileMigrationSql).toContain('alter table public.user_profiles enable row level security');expect(profileMigrationSql).toContain('revoke all on public.user_profiles from anon');expect(profileMigrationSql).toContain('with check ((select auth.uid()) = user_id)');});
+  it('validates currency, timezone, and supported map providers',()=>{expect(profileMigrationSql).toContain("default_currency ~ '^[A-Z]{3}$'");expect(profileMigrationSql).toContain('public.is_valid_timezone(default_timezone)');expect(profileMigrationSql).toContain("'system', 'apple', 'amap', 'baidu', 'google'");});
+});
+
+describe('Phase 03B.3 record center migration',()=>{
+  it('adds record preferences without changing existing RLS policies',()=>{expect(recordCenterMigrationSql).toContain('alter table public.user_profiles');expect(recordCenterMigrationSql).toContain('show_expenses boolean not null default true');expect(recordCenterMigrationSql).toContain('show_media_notes boolean not null default false');expect(recordCenterMigrationSql).toContain('user_profiles_at_least_one_record_module_check');expect(recordCenterMigrationSql).toContain('no RLS changes');});
+  it('keeps historical media discoverable and existing purchases counted',()=>{expect(recordCenterMigrationSql).toContain('where exists');expect(recordCenterMigrationSql).toContain('from public.media_notes');expect(recordCenterMigrationSql).toContain('update public.purchases set purchased = true');});
+  it('adds explicit purchase spending flags',()=>{expect(recordCenterMigrationSql).toContain('purchased boolean not null default false');expect(recordCenterMigrationSql).toContain('include_in_expenses boolean not null default true');});
 });

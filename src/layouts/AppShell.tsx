@@ -1,6 +1,6 @@
-import { Bell, CalendarCheck2, LogOut, Plus } from 'lucide-react';
+import { CalendarCheck2, LogOut, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BottomNavigation } from '../components/navigation/BottomNavigation';
 import { SidebarNavigation } from '../components/navigation/SidebarNavigation';
 import { NewTripDialog } from '../components/trips/NewTripDialog';
@@ -19,6 +19,8 @@ export function AppShell() {
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { isOnline } = useNetwork();
+  const location = useLocation();
+  const navigate = useNavigate();
   const {
     trips,
     selectedTrip,
@@ -42,6 +44,18 @@ export function AppShell() {
     }
   }
 
+  function handleTripChange(tripId: string) {
+    const trip = trips.find((candidate) => candidate.id === tripId);
+    if (!trip) return;
+    selectTrip(tripId);
+    const status = getTripStatus(trip);
+    if (location.pathname === '/today' && status !== 'active') {
+      navigate('/overview', { replace: true });
+    } else if (location.pathname === '/overview' && status === 'active') {
+      navigate('/today', { replace: true });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <SidebarNavigation />
@@ -56,7 +70,7 @@ export function AppShell() {
               <select
                 aria-label="选择当前旅行"
                 value={selectedTripId}
-                onChange={(event) => selectTrip(event.target.value)}
+                onChange={(event) => handleTripChange(event.target.value)}
                 disabled={trips.length === 0 || isLoading}
                 className="max-w-[130px] rounded-xl border-0 bg-transparent px-2 py-2 text-sm font-semibold text-ink outline-none hover:bg-white sm:max-w-sm"
               >
@@ -76,13 +90,6 @@ export function AppShell() {
               <span className="hidden max-w-48 truncate text-xs text-muted lg:inline">
                 {user?.email}
               </span>
-              <button
-                type="button"
-                aria-label="查看通知"
-                className="grid size-9 place-items-center rounded-full border border-line bg-white text-muted hover:text-ink"
-              >
-                <Bell className="size-[18px]" />
-              </button>
               <button
                 type="button"
                 onClick={() => setNewTripOpen(true)}

@@ -1,4 +1,5 @@
 import type { ItineraryItem, Trip, TripDay } from '../types/trip';
+import type { MapProvider } from '../types/profile';
 
 export type TripStatus = 'upcoming' | 'active' | 'completed';
 export interface ZonedClock { date: string; minutes: number }
@@ -59,6 +60,27 @@ export function getTodayItineraryState(items: ItineraryItem[], nowMinutes: numbe
   return { current, next, past: [...finished, ...pastTimed], upcoming, untimed };
 }
 
-export function externalNavigationUrl(address: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+export function externalNavigationUrl(
+  address: string,
+  provider: MapProvider = 'system',
+  userAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent,
+): string {
+  const query = encodeURIComponent(address);
+  const resolved =
+    provider === 'system'
+      ? /iPhone|iPad|iPod|Macintosh/i.test(userAgent)
+        ? 'apple'
+        : 'google'
+      : provider;
+  switch (resolved) {
+    case 'apple':
+      return `https://maps.apple.com/?q=${query}`;
+    case 'amap':
+      return `https://uri.amap.com/search?keyword=${query}&callnative=1`;
+    case 'baidu':
+      return `https://api.map.baidu.com/geocoder?address=${query}&output=html&src=tripflow`;
+    case 'google':
+    default:
+      return `https://www.google.com/maps/search/?api=1&query=${query}`;
+  }
 }

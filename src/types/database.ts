@@ -9,6 +9,52 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      user_profiles: {
+        Row: {
+          user_id: string;
+          nickname: string;
+          home_location: string;
+          default_currency: string;
+          default_timezone: string;
+          default_map_provider: string;
+          show_expenses: boolean;
+          show_purchases: boolean;
+          show_journals: boolean;
+          show_media_notes: boolean;
+          record_preferences_configured: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          nickname?: string;
+          home_location?: string;
+          default_currency?: string;
+          default_timezone?: string;
+          default_map_provider?: string;
+          show_expenses?: boolean;
+          show_purchases?: boolean;
+          show_journals?: boolean;
+          show_media_notes?: boolean;
+          record_preferences_configured?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          nickname?: string;
+          home_location?: string;
+          default_currency?: string;
+          default_timezone?: string;
+          default_map_provider?: string;
+          show_expenses?: boolean;
+          show_purchases?: boolean;
+          show_journals?: boolean;
+          show_media_notes?: boolean;
+          record_preferences_configured?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       trips: {
         Row: {
           id: string;
@@ -154,9 +200,9 @@ export interface Database {
         Relationships: [];
       };
       purchases: {
-        Row: { id: string; trip_id: string; user_id: string; date: string; title: string; amount: number; currency: string; location: string; recipient: string; notes: string; organized: boolean; created_at: string; updated_at: string };
-        Insert: { id?: string; trip_id: string; user_id: string; date: string; title: string; amount: number; currency: string; location?: string; recipient?: string; notes?: string; organized?: boolean; created_at?: string; updated_at?: string };
-        Update: { date?: string; title?: string; amount?: number; currency?: string; location?: string; recipient?: string; notes?: string; organized?: boolean; updated_at?: string };
+        Row: { id: string; trip_id: string; user_id: string; date: string; title: string; amount: number; currency: string; location: string; recipient: string; notes: string; organized: boolean; purchased: boolean; include_in_expenses: boolean; created_at: string; updated_at: string };
+        Insert: { id?: string; trip_id: string; user_id: string; date: string; title: string; amount: number; currency: string; location?: string; recipient?: string; notes?: string; organized?: boolean; purchased?: boolean; include_in_expenses?: boolean; created_at?: string; updated_at?: string };
+        Update: { date?: string; title?: string; amount?: number; currency?: string; location?: string; recipient?: string; notes?: string; organized?: boolean; purchased?: boolean; include_in_expenses?: boolean; updated_at?: string };
         Relationships: [];
       };
       media_notes: {
