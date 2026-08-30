@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTrips } from '../../state/useTrips';
 import type { CreateTripInput } from '../../types/trip';
 import { getTripStatus } from '../../domain/travelMode';
+import { TimezoneCombobox } from '../ui/TimezoneCombobox';
+import { useProfile } from '../../state/useProfile';
 
 interface NewTripDialogProps {
   open: boolean;
@@ -24,7 +26,17 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addTrip, isSaving } = useTrips();
+  const { profile } = useProfile();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!open || !profile?.defaultTimezone) return;
+    queueMicrotask(() => setForm((current) =>
+      current.name || current.destination || current.departureLocation || current.startDate || current.endDate
+        ? current
+        : { ...current, timezone: profile.defaultTimezone },
+    ));
+  }, [open, profile?.defaultTimezone]);
 
   if (!open) {
     return null;
@@ -36,7 +48,10 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
   }
 
   function handleClose() {
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      timezone: profile?.defaultTimezone ?? emptyForm.timezone,
+    });
     setError('');
     onClose();
   }
@@ -138,18 +153,14 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
             </label>
           </div>
 
-          <label className="block">
-            <span className="field-label">旅行时区</span>
-            <input
-              aria-label="旅行时区"
-              required
-              value={form.timezone}
-              onChange={(event) => updateField('timezone', event.target.value)}
-              className="field-input"
-              placeholder="例如：Asia/Tokyo"
+          <div>
+            <TimezoneCombobox
+              label="旅行时区"
+              value={form.timezone ?? emptyForm.timezone ?? 'Asia/Shanghai'}
+              onChange={(value) => updateField('timezone', value)}
             />
             <span className="mt-1.5 block text-xs text-muted">使用目的地的 IANA timezone，确保 Today 不会跨日错位。</span>
-          </label>
+          </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block">

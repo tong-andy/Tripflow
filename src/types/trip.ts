@@ -50,6 +50,7 @@ export interface Trip {
   budgetAmount: number | null;
   budgetCurrency: string | null;
   timezone: string;
+  travelNote: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,7 +65,7 @@ export interface CreateTripInput {
 }
 
 export type UpdateTripInput = Partial<
-  Pick<Trip, 'name' | 'destination' | 'departureLocation' | 'budgetAmount' | 'budgetCurrency' | 'timezone'>
+  Pick<Trip, 'name' | 'destination' | 'departureLocation' | 'budgetAmount' | 'budgetCurrency' | 'timezone' | 'travelNote'>
 >;
 
 export interface CreateTripDayInput {

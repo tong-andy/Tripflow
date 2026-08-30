@@ -4,6 +4,7 @@ import archiveMigrationSql from '../../supabase/migrations/20260831000300_create
 import travelModeMigrationSql from '../../supabase/migrations/20260831000400_add_trip_timezone_and_itinerary_address.sql?raw';
 import profileMigrationSql from '../../supabase/migrations/20260831000500_create_user_profiles.sql?raw';
 import recordCenterMigrationSql from '../../supabase/migrations/20260831000600_record_center_preferences_and_purchase_spending.sql?raw';
+import travelNoteMigrationSql from '../../supabase/migrations/20260831000700_add_trip_travel_note.sql?raw';
 
 const tables = [
   'trips',
@@ -111,4 +112,8 @@ describe('Phase 03B.3 record center migration',()=>{
   it('adds record preferences without changing existing RLS policies',()=>{expect(recordCenterMigrationSql).toContain('alter table public.user_profiles');expect(recordCenterMigrationSql).toContain('show_expenses boolean not null default true');expect(recordCenterMigrationSql).toContain('show_media_notes boolean not null default false');expect(recordCenterMigrationSql).toContain('user_profiles_at_least_one_record_module_check');expect(recordCenterMigrationSql).toContain('no RLS changes');});
   it('keeps historical media discoverable and existing purchases counted',()=>{expect(recordCenterMigrationSql).toContain('where exists');expect(recordCenterMigrationSql).toContain('from public.media_notes');expect(recordCenterMigrationSql).toContain('update public.purchases set purchased = true');});
   it('adds explicit purchase spending flags',()=>{expect(recordCenterMigrationSql).toContain('purchased boolean not null default false');expect(recordCenterMigrationSql).toContain('include_in_expenses boolean not null default true');});
+});
+
+describe('Phase 03B.4 travel note migration',()=>{
+  it('adds a bounded nullable trip note without changing RLS',()=>{expect(travelNoteMigrationSql).toContain('alter table public.trips');expect(travelNoteMigrationSql).toContain('add column travel_note text');expect(travelNoteMigrationSql).toContain('length(travel_note) <= 10000');expect(travelNoteMigrationSql).toContain('no RLS changes');});
 });

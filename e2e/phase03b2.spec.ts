@@ -120,10 +120,12 @@ test('persists map preference and scopes trip data including completed history',
 
   await page.getByRole('link', { name: '我的', exact: true }).click();
   await expect(page.getByRole('heading', { name: '我的' })).toBeVisible();
+  await page.getByText('偏好设置', { exact: true }).click();
   await page.getByLabel('默认地图').selectOption('amap');
   await page.getByRole('button', { name: '保存设置' }).click();
   await expect(page.getByText('设置已保存')).toBeVisible();
   await page.reload();
+  await page.getByText('偏好设置', { exact: true }).click();
   await expect(page.getByLabel('默认地图')).toHaveValue('amap');
   await selectTrip(page, 'A旅行');
   await page.getByRole('link', { name: '行程', exact: true }).click();

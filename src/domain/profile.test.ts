@@ -11,6 +11,7 @@ function trip(id: string, destination: string, startDate: string, endDate: strin
     startDate,
     endDate,
     timezone: 'Asia/Shanghai',
+    travelNote: null,
     days: Array.from({ length: days }, (_, index) => ({
       id: `${id}-day-${index}`,
       tripId: id,
@@ -60,6 +61,7 @@ describe('annual profile statistics', () => {
     );
 
     expect(stats).toMatchObject({
+      totalTrips: 3,
       completedTrips: 2,
       totalDays: 8,
       destinations: 1,

@@ -65,7 +65,10 @@ export function loadTripState(storage: Storage | undefined): TripState {
     );
 
     return {
-      trips: parsed.trips,
+      trips: parsed.trips.map((trip) => ({
+        ...trip,
+        travelNote: trip.travelNote ?? null,
+      })),
       selectedTripId: selectedTripExists
         ? parsed.selectedTripId
         : (parsed.trips[0]?.id ?? ''),
@@ -90,4 +93,3 @@ export function saveTripState(
     // Storage can be unavailable in private mode or when quota is exhausted.
   }
 }
-

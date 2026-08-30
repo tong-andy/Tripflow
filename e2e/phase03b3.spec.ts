@@ -49,10 +49,12 @@ test('uses Record naming and persists responsive module preferences', async ({ p
   await expect(page.getByText('归档', { exact: true })).toHaveCount(0);
 
   await page.getByRole('link', { name: '我的', exact: true }).click();
+  await page.getByText('偏好设置', { exact: true }).click();
   await page.getByLabel('显示购物').uncheck();
   await page.getByLabel('显示素材').check();
   await page.getByRole('button', { name: '保存设置' }).click();
   await page.reload();
+  await page.getByText('偏好设置', { exact: true }).click();
   await expect(page.getByLabel('显示购物')).not.toBeChecked();
   await expect(page.getByLabel('显示素材')).toBeChecked();
   await page.getByRole('link', { name: '记录', exact: true }).click();
@@ -102,7 +104,7 @@ test('aggregates purchased shopping once and applies only matching currency to b
   await expect(total).toContainText('33,000');
 
   await page.getByRole('link', { name: '我的', exact: true }).click();
-  const annual = page.getByRole('heading', { name: '本年度消费' }).locator('..').locator('..');
+  const annual = page.getByRole('region', { name: '年度旅行消费' });
   await expect(annual).toContainText('JPY');
   await expect(annual).toContainText('33,000');
   await expect(annual).toContainText('USD');
@@ -129,6 +131,7 @@ test('keeps historical material discoverable until the user hides it without del
   await expect(page.getByText('旧照片.jpg')).toBeVisible();
 
   await page.getByRole('link', { name: '我的', exact: true }).click();
+  await page.getByText('偏好设置', { exact: true }).click();
   await expect(page.getByLabel('显示素材')).toBeChecked();
   await page.getByLabel('显示素材').uncheck();
   await page.getByRole('button', { name: '保存设置' }).click();

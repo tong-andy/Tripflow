@@ -11,15 +11,22 @@ import { TripProvider } from '../state/TripProvider';
 import { AuthProvider } from '../state/AuthProvider';
 import { createAuthService, createTestSession } from '../test/authTestUtils';
 import { createLegacyTripRepository } from '../services/legacyTripRepository';
+import { ProfileProvider } from '../state/ProfileProvider';
+import { defaultUserProfile } from '../services/profileRepository';
+import type { ProfileRepository } from '../services/profileRepository';
 
 const authService = createAuthService(createTestSession());
 const tripRepository = createLegacyTripRepository(window.localStorage);
+const profileRepository: ProfileRepository = {
+  loadProfile: async (userId) => ({ profile: defaultUserProfile(userId), annualExpenses: [], annualPurchases: [] }),
+  saveProfile: async (userId, input) => ({ ...defaultUserProfile(userId), ...input, recordPreferencesConfigured: true }),
+};
 
 function TestApp() {
   return (
     <AuthProvider service={authService}>
       <TripProvider repository={tripRepository}>
-        <MemoryRouter initialEntries={['/trips']}>
+        <ProfileProvider repository={profileRepository}><MemoryRouter initialEntries={['/trips']}>
           <Routes>
             <Route element={<AppShell />}>
               <Route path="/trips" element={<TripsPage />} />
@@ -29,7 +36,7 @@ function TestApp() {
               <Route path="/archive" element={<ArchivePage />} />
             </Route>
           </Routes>
-        </MemoryRouter>
+        </MemoryRouter></ProfileProvider>
       </TripProvider>
     </AuthProvider>
   );

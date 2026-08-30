@@ -159,6 +159,7 @@ function mapTrips(
     budgetAmount: row.budget_amount == null ? null : Number(row.budget_amount),
     budgetCurrency: row.budget_currency ?? null,
     timezone: row.timezone ?? 'Asia/Shanghai',
+    travelNote: row.travel_note ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
@@ -261,6 +262,11 @@ export function createSupabaseTripRepository(
       if (input.timezone !== undefined) {
         assertTimezone(input.timezone);
         update.timezone = input.timezone;
+      }
+      if (input.travelNote !== undefined) {
+        const note = input.travelNote?.trim() ?? '';
+        if (note.length > 10000) throw new Error('旅行备注不能超过 10000 个字符。');
+        update.travel_note = note || null;
       }
 
       const { error } = await database()

@@ -69,6 +69,7 @@ export interface Database {
           budget_amount: number | null;
           budget_currency: string | null;
           timezone: string;
+          travel_note: string | null;
         };
         Insert: {
           id?: string;
@@ -83,6 +84,7 @@ export interface Database {
           budget_amount?: number | null;
           budget_currency?: string | null;
           timezone?: string;
+          travel_note?: string | null;
         };
         Update: {
           name?: string;
@@ -94,6 +96,7 @@ export interface Database {
           budget_amount?: number | null;
           budget_currency?: string | null;
           timezone?: string;
+          travel_note?: string | null;
         };
         Relationships: [];
       };

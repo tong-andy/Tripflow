@@ -2,6 +2,7 @@ import type { Trip } from '../types/trip';
 
 export const seedTrip: Trip = {
   timezone: 'Asia/Tokyo',
+  travelNote: null,
   budgetAmount: null,
   budgetCurrency: null,
   id: 'trip-kansai-2026',

@@ -102,6 +102,7 @@ export function createTrip(
     budgetAmount: null,
     budgetCurrency: null,
     timezone: input.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'Asia/Shanghai',
+    travelNote: null,
     createdAt: timestamp,
     updatedAt: timestamp,
   };

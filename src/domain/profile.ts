@@ -19,10 +19,12 @@ export function buildAnnualTravelStats(
   year: number,
   now = new Date(),
 ): AnnualTravelStats {
-  const completed = trips.filter(
+  const annualTrips = trips.filter(
+    (trip) => Number(trip.startDate.slice(0, 4)) === year,
+  );
+  const completed = annualTrips.filter(
     (trip) =>
-      getTripStatus(trip, now) === 'completed' &&
-      Number(trip.endDate.slice(0, 4)) === year,
+      getTripStatus(trip, now) === 'completed',
   );
   const expensesByCurrency = totalsByCurrency(expenses, purchases);
   const longest = completed.reduce<Trip | null>(
@@ -32,6 +34,7 @@ export function buildAnnualTravelStats(
   );
   return {
     year,
+    totalTrips: annualTrips.length,
     completedTrips: completed.length,
     totalDays: completed.reduce((total, trip) => total + trip.days.length, 0),
     destinations: new Set(completed.map((trip) => trip.destination.trim())).size,

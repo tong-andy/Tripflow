@@ -42,6 +42,7 @@ export type UpdateUserProfileInput = Pick<
 
 export interface AnnualTravelStats {
   year: number;
+  totalTrips: number;
   completedTrips: number;
   totalDays: number;
   destinations: number;

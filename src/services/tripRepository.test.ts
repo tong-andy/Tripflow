@@ -173,6 +173,19 @@ describe('Supabase trip repository', () => {
     expect(builders[0]?.builder.eq).toHaveBeenCalledWith('user_id', 'user-1');
   });
 
+  it('trims and persists a trip-level travel note through the owned trip update', async () => {
+    const updatedTrip = { ...tripRow, travel_note: '重要提醒', timezone: 'Asia/Shanghai', budget_amount: null, budget_currency: null };
+    const { client, builders } = createMockClient({
+      trips: [{ data: updatedTrip, error: null }, { data: [updatedTrip], error: null }],
+      trip_days: [{ data: [dayRow], error: null }],
+      preparation_items: [{ data: [], error: null }],
+      itinerary_items: [{ data: [], error: null }],
+    });
+    const trip = await createSupabaseTripRepository(client).updateTrip('user-1', 'trip-1', { travelNote: '  重要提醒  ' });
+    expect(builders[0]?.builder.update).toHaveBeenCalledWith({ travel_note: '重要提醒' });
+    expect(trip.travelNote).toBe('重要提醒');
+  });
+
   it('rejects repository access without an authenticated user id', async () => {
     const { client } = createMockClient({});
     await expect(

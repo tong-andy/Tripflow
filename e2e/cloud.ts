@@ -106,6 +106,7 @@ export async function installCloudApiMock(page: Page) {
         budget_amount: null,
         budget_currency: null,
         timezone: input.p_timezone ?? 'Asia/Shanghai',
+        travel_note: null,
       });
       datesBetween(input.p_start_date, input.p_end_date).forEach(
         (date, index) => {
