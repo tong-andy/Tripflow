@@ -1,4 +1,3 @@
-import { sites } from '@openai/sites-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -23,7 +22,6 @@ export default defineConfig({
       },
       workbox:{navigateFallback:'/index.html',globPatterns:['**/*.{js,css,html,ico,png,svg,woff2}'],cleanupOutdatedCaches:true,clientsClaim:true,skipWaiting:true},
     }),
-    sites(),
   ],
   server: isCodexSeatbeltSandbox
     ? { watch: { useFsEvents: false, usePolling: true } }
