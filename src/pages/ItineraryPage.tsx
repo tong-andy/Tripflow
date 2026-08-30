@@ -1,4 +1,4 @@
-import { Clock3, MapPin, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock3, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ItineraryItemForm } from '../components/itinerary/ItineraryItemForm';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -25,6 +25,7 @@ export function ItineraryPage() {
   const {
     selectedTrip,
     addItineraryItem,
+    updateItineraryItem,
     updateItineraryStatus,
     deleteItineraryItem,
     isSaving,
@@ -34,6 +35,7 @@ export function ItineraryPage() {
   );
   const [formOpen, setFormOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState<ItineraryItem>();
+  const [editingItem, setEditingItem] = useState<ItineraryItem>();
 
   if (!selectedTrip) {
     return <NoTripState />;
@@ -140,6 +142,7 @@ export function ItineraryPage() {
                     <Clock3 className="size-3.5" />
                     预计停留 {formatDuration(item.durationMinutes)}
                   </p>
+                  {item.address ? <p className="mt-2 text-xs text-muted">{item.address}</p> : null}
                   {item.notes ? (
                     <p className="mt-2 text-sm leading-6 text-muted">{item.notes}</p>
                   ) : null}
@@ -169,6 +172,15 @@ export function ItineraryPage() {
                 <button
                   type="button"
                   disabled={isSaving}
+                  aria-label={`编辑行程：${item.placeName}`}
+                  onClick={() => setEditingItem(item)}
+                  className="grid size-8 place-items-center rounded-lg text-muted hover:bg-brand-soft hover:text-brand"
+                >
+                  <Pencil className="size-3.5" />
+                </button>
+                <button
+                  type="button"
+                  disabled={isSaving}
                   aria-label={`删除行程：${item.placeName}`}
                   onClick={() => setDeletingItem(item)}
                   className="grid size-8 place-items-center rounded-lg text-muted hover:bg-red-50 hover:text-red-600"
@@ -194,6 +206,30 @@ export function ItineraryPage() {
           </div>
         )}
       </div>
+
+      {editingItem && selectedDay ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-canvas md:grid md:place-items-center md:bg-ink/35 md:p-8">
+          <section aria-label={`编辑行程：${editingItem.placeName}`} className="min-h-dvh bg-canvas px-5 pb-10 pt-[max(1rem,env(safe-area-inset-top))] md:min-h-0 md:w-full md:max-w-3xl md:rounded-3xl md:p-7">
+            <button type="button" onClick={() => setEditingItem(undefined)} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-ink">
+              <ArrowLeft className="size-4" /> 返回行程
+            </button>
+            <div className="mt-4">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Edit itinerary</p>
+              <h2 className="mt-2 text-2xl font-bold">编辑行程</h2>
+            </div>
+            <ItineraryItemForm
+              key={editingItem.id}
+              day={selectedTrip.days.find((day) => day.id === editingItem.tripDayId) ?? selectedDay}
+              item={editingItem}
+              onCancel={() => setEditingItem(undefined)}
+              onSubmit={async (input) => {
+                await updateItineraryItem(editingItem.id, input);
+                setEditingItem(undefined);
+              }}
+            />
+          </section>
+        </div>
+      ) : null}
 
       <ConfirmDialog
         open={Boolean(deletingItem)}

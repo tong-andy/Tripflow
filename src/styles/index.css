@@ -80,3 +80,11 @@ button {
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

@@ -50,7 +50,7 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
       const trip = await addTrip(form);
       handleClose();
       const mobileActive = window.matchMedia('(max-width: 767px)').matches && getTripStatus(trip) === 'active';
-      void navigate(mobileActive ? '/today' : '/overview');
+      void navigate(mobileActive ? '/today' : '/overview', { replace: true });
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : '无法创建旅行',

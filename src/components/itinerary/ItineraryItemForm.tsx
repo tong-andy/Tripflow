@@ -2,26 +2,29 @@ import { useState, type FormEvent } from 'react';
 import type {
   CreateItineraryItemInput,
   ItineraryStatus,
+  ItineraryItem,
   TripDay,
 } from '../../types/trip';
 
 interface ItineraryItemFormProps {
   day: TripDay;
+  item?: ItineraryItem;
   onSubmit: (input: CreateItineraryItemInput) => Promise<void>;
   onCancel: () => void;
 }
 
 export function ItineraryItemForm({
   day,
+  item,
   onSubmit,
   onCancel,
 }: ItineraryItemFormProps) {
-  const [time, setTime] = useState('09:00');
-  const [placeName, setPlaceName] = useState('');
-  const [address, setAddress] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState(60);
-  const [notes, setNotes] = useState('');
-  const [status, setStatus] = useState<ItineraryStatus>('planned');
+  const [time, setTime] = useState(item ? (item.time ?? '') : '09:00');
+  const [placeName, setPlaceName] = useState(item?.placeName ?? '');
+  const [address, setAddress] = useState(item?.address ?? '');
+  const [durationMinutes, setDurationMinutes] = useState(item?.durationMinutes ?? 60);
+  const [notes, setNotes] = useState(item?.notes ?? '');
+  const [status, setStatus] = useState<ItineraryStatus>(item?.status ?? 'planned');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -74,7 +77,7 @@ export function ItineraryItemForm({
           <span className="field-label">地点名称</span>
           <input
             required
-            autoFocus
+            autoFocus={!item}
             value={placeName}
             onChange={(event) => setPlaceName(event.target.value)}
             className="field-input"
@@ -130,7 +133,7 @@ export function ItineraryItemForm({
           disabled={isSubmitting}
           className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white"
         >
-          {isSubmitting ? '添加中…' : '添加行程'}
+          {isSubmitting ? '保存中…' : item ? '保存修改' : '添加行程'}
         </button>
       </div>
     </form>
