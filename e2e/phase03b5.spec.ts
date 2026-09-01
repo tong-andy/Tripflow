@@ -55,10 +55,10 @@ test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, over
     await expect(nearbyCluster).toBeVisible();
     await nearbyCluster.click();
     await expect(footprint).toHaveAttribute('data-view-mode', 'focus');
-    await nearbyCluster.click();
+    await expect(page.getByRole('button', { name: '放大地图' })).toBeVisible();
+    await page.getByRole('button', { name: '查看城市：东京' }).click();
     const clusterDetails = page.getByRole('region', { name: '世界旅行足迹' }).getByRole('status');
     await expect(clusterDetails).toContainText('东京 · 日本');
-    await expect(clusterDetails).toContainText('镰仓 · 日本');
     await expect(clusterDetails).toContainText('1 趟关联旅行');
   } else {
     await page.getByLabel('查看城市：镰仓').click();
@@ -84,12 +84,13 @@ test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, over
     .click();
   await expect(page.getByRole('heading', { name: '2026 巴黎' })).toBeVisible();
   await expect(page.getByLabel('选择当前旅行')).toBeVisible();
-  await page.getByRole('button', { name: /2026 巴黎/ }).first().click();
-  await expect(page.getByRole('button', { name: /查看全部旅行/ })).toBeVisible();
-  await page.getByRole('button', { name: /2025 东京/ }).click();
+  await expect(page.getByRole('region', { name: '年度旅行概览' })).toContainText('1 趟旅行');
+  await page.getByRole('button', { name: '2025', exact: true }).click();
+  await page.getByRole('button', { name: '查看旅行：2025 东京' }).click();
   await expect(page.getByRole('heading', { name: '2025 东京' })).toBeVisible();
 
   await navigation.getByRole('link', { name: '准备', exact: true }).click();
+  await expect(page.getByRole('complementary', { name: '当前旅行信息' })).toContainText('2025 东京');
   for (const label of ['通行', '住宿', '证件', '预订与活动', '网络与设备', '生活用品']) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }

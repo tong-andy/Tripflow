@@ -35,18 +35,19 @@ test('enforces Today routing and keeps the five-item mobile navigation', async (
   await createTrip(page, '进行中旅行', today, today);
   await expect(page).toHaveURL(/\/today$/);
   await createTrip(page, '即将出发旅行', dateOffset(2), dateOffset(3));
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?year=\d+)?$/);
   await createTrip(page, '已完成旅行', dateOffset(-3), dateOffset(-2));
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?year=\d+)?$/);
 
   await selectTrip(page, '进行中旅行');
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/overview(?:\?year=\d+)?$/);
+  await expect(page.getByRole('link', { name: '进入今天' })).toBeVisible();
   await selectTrip(page, '即将出发旅行');
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?year=\d+)?$/);
   await selectTrip(page, '进行中旅行');
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/overview(?:\?year=\d+)?$/);
   await selectTrip(page, '已完成旅行');
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?year=\d+)?$/);
 
   await page.evaluate(() => {
     window.history.pushState({}, '', '/today');

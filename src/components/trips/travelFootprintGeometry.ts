@@ -79,6 +79,28 @@ export function buildFocusViewBox(points: FootprintPoint[]): FootprintViewBox {
   };
 }
 
+export function zoomFootprintViewBox(
+  viewBox: FootprintViewBox,
+  zoom: number,
+): FootprintViewBox {
+  const safeZoom = clamp(zoom, 1, 4);
+  const width = viewBox.width / safeZoom;
+  const height = viewBox.height / safeZoom;
+  const centerX = viewBox.x + viewBox.width / 2;
+  const centerY = viewBox.y + viewBox.height / 2;
+
+  return {
+    x: clamp(centerX - width / 2, 0, MAP_WIDTH - width),
+    y: clamp(
+      centerY - height / 2,
+      GLOBAL_FOOTPRINT_VIEW_BOX.y,
+      GLOBAL_FOOTPRINT_VIEW_BOX.y + GLOBAL_FOOTPRINT_VIEW_BOX.height - height,
+    ),
+    width,
+    height,
+  };
+}
+
 export function pointIsInView(point: FootprintPoint, viewBox: FootprintViewBox) {
   return point.x >= viewBox.x
     && point.x <= viewBox.x + viewBox.width

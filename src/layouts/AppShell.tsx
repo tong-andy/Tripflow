@@ -52,8 +52,8 @@ export function AppShell() {
     const status = getTripStatus(trip);
     if (location.pathname === '/today' && status !== 'active') {
       navigate('/overview', { replace: true });
-    } else if (location.pathname === '/overview' && status === 'active') {
-      navigate('/today', { replace: true });
+    } else if (location.pathname === '/overview') {
+      navigate(`/overview?year=${trip.startDate.slice(0, 4)}`, { replace: true });
     }
   }
 

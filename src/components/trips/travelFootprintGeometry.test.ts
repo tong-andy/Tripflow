@@ -5,6 +5,7 @@ import {
   clusterFootprintPoints,
   pointIsInView,
   projectFootprintPoint,
+  zoomFootprintViewBox,
 } from './travelFootprintGeometry';
 
 describe('travel footprint geometry', () => {
@@ -45,5 +46,14 @@ describe('travel footprint geometry', () => {
 
     expect(clusters).toHaveLength(2);
     expect(clusters.find((cluster) => cluster.values.length === 2)?.values).toEqual(['东京', '镌仓']);
+  });
+
+  it('zooms around the focus center while staying inside the map', () => {
+    const focused = buildFocusViewBox([projectFootprintPoint(139.6503, 35.6762)]);
+    const zoomed = zoomFootprintViewBox(focused, 3);
+
+    expect(zoomed.width).toBe(100);
+    expect(zoomed.height).toBe(37.5);
+    expect(pointIsInView(projectFootprintPoint(139.6503, 35.6762), zoomed)).toBe(true);
   });
 });

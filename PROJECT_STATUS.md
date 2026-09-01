@@ -13,9 +13,9 @@ This document records the current repository state. Use the current code and mig
 
 ## 2. Current Phase
 
-**Current Phase: Phase 03B.5.2**
+**Current Phase: Phase 03B.6**
 
-TripFlow uses one responsive five-item information architecture. The user-level My Trips home combines a structured-city travel footprint, dynamic year filters, cross-trip statistics, spending, and a timeline; its header is not presented as belonging to a selected trip. Phase 03B.5.2 adds cropped global and data-driven focus views plus touch-friendly mobile city clustering without changing business data, schema, or stable trip-level behavior.
+TripFlow uses one responsive five-item information architecture. Phase 03B.6 strengthens the travel-life hierarchy: My Trips has a richer flat world footprint and a consolidated annual dashboard, Overview combines an annual trip index with status-aware single-trip detail, and trip work pages show a consistent current-trip context. Mobile footprint clusters now zoom and expand nearby cities for direct selection. Amount editors preserve an empty input state while keeping numeric storage unchanged.
 
 ## 3. Current Navigation
 
@@ -54,10 +54,10 @@ Desktop, tablet, mobile web, and PWA use the same five modules. `/profile` is a 
 - New trips select one or more destinations from a lightweight local city catalog; users never enter coordinates.
 - Trip creation atomically generates the inclusive date range and structured destinations through `create_trip_with_days_v3`.
 - Existing trips retain their legacy destination text; only trips with structured destinations appear on the footprint map.
-- The My Trips home provides a real-country-boundary SVG world footprint with global/focus viewports, mobile city clustering, dynamic year/all filters, cross-trip dashboard, per-currency spending, longest completed trip, and date-sorted timeline.
-- The My Trips global header omits the selected-trip control and duplicate create action; trip-level pages retain the selected-trip control, and My Trips keeps one contextual create action in its content.
+- The My Trips home provides a layered real-country-boundary SVG world footprint with continent and selected country labels, global/focus viewports, 1–4× focus zoom, mobile nearby-city expansion, dynamic year/all filters, a consolidated cross-trip dashboard with per-currency spending, and a date-sorted timeline.
+- The My Trips global header omits the selected-trip control, places Settings beside the title on mobile, and exposes one prominent create action at the top of the page.
 - Upcoming, active, and completed status is calculated in each trip's timezone.
-- Selected-trip overview has a current-trip header, status, cities/date/duration, edit action, recent-trip switcher, preparation and itinerary progress, scoped spending/budget, next itinerary item, and trip note.
+- Overview first presents a selected-year summary, status counts, destinations, and selectable trip cards, then shows status-aware detail for the selected trip. Upcoming trips emphasize preparation and planning, active trips emphasize Today and current progress, and completed trips emphasize duration, spending, records, and itinerary review rather than preparation progress.
 - Per-trip budget, timezone, and a nullable trip-level note of up to 10,000 characters.
 - Completed trips remain selectable and their scoped records remain accessible.
 
@@ -92,6 +92,7 @@ Desktop, tablet, mobile web, and PWA use the same five modules. `/profile` is a 
 ### Expenses
 
 - Create, edit, and confirm-delete expenses with date, title, amount, ISO currency, category, and notes.
+- Expense, purchase, and budget amount inputs support a true empty state, deletion, and replacement before converting validated values to numbers for persistence.
 - Per-currency totals, category totals, a per-currency category pie chart, and trip budget comparison.
 - Other currencies are shown separately and are not included in a budget of a different currency.
 
@@ -125,7 +126,7 @@ Desktop, tablet, mobile web, and PWA use the same five modules. `/profile` is a 
 - External navigation links for Apple Maps, AMap, Baidu Maps, and Google Maps.
 - `system` resolves to Apple Maps on Apple platforms and Google Maps otherwise.
 - The saved user map preference is applied to itinerary and Today links.
-- The travel-footprint map loads a static Natural Earth 1:110m country-boundary SVG and overlays destination-coordinate markers. Its global view crops most of Antarctica, its focus view derives a padded viewport from the currently filtered cities, and its mobile presentation clusters nearby markers without a map SDK or clustering dependency.
+- The travel-footprint map loads a locally styled Natural Earth 1:110m country-boundary SVG and overlays destination-coordinate markers plus lightweight continent/country labels. Its flat global view crops most of Antarctica, its focus view supports 1–4× zoom, and mobile clusters immediately zoom and spread nearby cities into individually tappable markers without a map SDK or clustering dependency.
 
 ### PWA / Offline
 
@@ -140,6 +141,7 @@ Desktop, tablet, mobile web, and PWA use the same five modules. `/profile` is a 
 - Mobile form controls use a 16px font to avoid unintended iOS zoom.
 - Mobile itinerary editing uses a full-screen editor and does not rely on browser-history back behavior.
 - Safe-area padding is used for the fixed bottom navigation and mobile editor.
+- Preparation, Itinerary, and Records share a responsive current-trip banner with trip name, structured destinations, date range, duration, and status.
 
 ## 5. Data Architecture
 
@@ -222,8 +224,8 @@ Do not edit old migrations. Add a new migration for future schema changes and up
 - Today is a contextual active-trip route, not a mobile bottom-navigation destination.
 - Direct access to Today for a non-active trip redirects to the trip overview.
 - Preparation, Itinerary, Today, and Records operate on the currently selected trip.
-- My Trips and its profile/preferences drawer are user-level; Preparation, Itinerary, Today, Records, and Overview operate on the selected trip.
-- My Trips owns cross-trip year filtering; the selected-trip overview only provides a lightweight recent-trip switcher.
+- My Trips and its profile/preferences drawer are user-level; Preparation, Itinerary, Today, and Records operate on the selected trip. Overview combines a user-level annual index with selected-trip detail.
+- My Trips and Overview each own contextual year filtering. Selecting a year in Overview also selects the most recent trip in that year; changing the current trip while on Overview synchronizes its year.
 - Footprint markers come only from structured `trip_destinations`; legacy destination text is never geocoded or guessed.
 - A user's default timezone seeds new trips; changing it does not alter existing trip timezones.
 - Trip status and Today date matching use the trip timezone, not the browser's UTC date or the user default timezone.
@@ -264,11 +266,11 @@ Quality commands:
 
 Current test coverage includes domain rules, repository ownership/scoping, migrations, authentication, providers, routing, PWA configuration, mobile safeguards, cloud-backed core flows, records, Today, responsive usability, structured destinations, footprint/year/timeline behavior, the six-section preparation center, and three Playwright viewports (1440, 768, 390).
 
-Latest local verification for Phase 03B.5.2:
+Latest local verification for Phase 03B.6:
 
 - Lint: passed (`npm run lint`)
 - Typecheck: passed (`npm run typecheck`)
-- Unit/component tests: passed — 19 files, 87 tests (`npm test`)
+- Unit/component tests: passed — 20 files, 90 tests (`npm test`)
 - Playwright E2E: passed — 57 collected, 39 passed and 18 intentionally skipped by project-specific guards (`npm run test:e2e`)
 - Production build: passed (`npm run build`), with the known chunk-size warning below
 
@@ -285,7 +287,7 @@ Update these results only when the commands are actually run; update test counts
 
 - Business-data offline caching and offline write/synchronization are not implemented.
 - The Phase 02A versioned `localStorage` implementation remains as an explicit legacy/test adapter and is separate from production Supabase data.
-- The current production build emits a chunk-size warning: the main minified JavaScript chunk is 656.48 kB (187.90 kB gzip), above Vite's 500 kB warning threshold. The separate 136.07 kB world-boundary SVG is a static precached asset rather than JavaScript.
+- The current production build emits a chunk-size warning: the main minified JavaScript chunk is about 665 kB (190 kB gzip), above Vite's 500 kB warning threshold. The world-boundary SVG remains a separate static precached asset rather than JavaScript.
 - The bundled local city catalog intentionally covers major travel cities rather than every city worldwide; it is designed for incremental expansion.
 
 ## 14. Next / Not Started
@@ -297,5 +299,5 @@ No next phase is explicitly defined in the current repository.
 ## 15. Last Updated
 
 - **Date:** 2026-09-01
-- **Phase:** Phase 03B.5.2
-- **Summary:** Cropped the global footprint viewport, added a padded city-derived focus view, enlarged marker hit areas, and added dependency-free mobile clustering with cluster detail lists; no schema or business-data behavior changed.
+- **Phase:** Phase 03B.6
+- **Summary:** Reworked the travel footprint visual hierarchy and nearby-city interaction, consolidated My Trips statistics and top actions, rebuilt Overview as annual index plus status-aware trip detail, added shared current-trip context to work pages, and fixed empty-state amount editing; no schema, Provider, or Repository changes.

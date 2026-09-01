@@ -2,6 +2,7 @@ import { ArrowLeft, CalendarCheck2, Clock3, MapPin, Navigation, Pencil, Plus, Tr
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ItineraryItemForm } from '../components/itinerary/ItineraryItemForm';
+import { CurrentTripBanner } from '../components/trips/CurrentTripBanner';
 import { PageHeader } from '../components/ui/PageHeader';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { NoTripState } from '../components/ui/NoTripState';
@@ -75,6 +76,8 @@ export function ItineraryPage() {
           </button></div>
         }
       />
+
+      <CurrentTripBanner trip={selectedTrip} />
 
       <div className="-mx-5 mt-8 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <div className="flex min-w-max gap-2">

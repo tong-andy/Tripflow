@@ -103,7 +103,7 @@ test('aggregates purchased shopping once and applies only matching currency to b
   await expect(total).toContainText('33,000');
 
   await page.goto('/trips');
-  const annual = page.getByRole('region', { name: '旅行消费' });
+  const annual = page.getByRole('region', { name: '旅行统计' });
   await expect(annual).toContainText('JPY');
   await expect(annual).toContainText('33,000');
   await expect(annual).toContainText('USD');

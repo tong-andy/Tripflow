@@ -1,6 +1,7 @@
 import { Check, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { PreparationItemForm } from '../components/preparation/PreparationItemForm';
+import { CurrentTripBanner } from '../components/trips/CurrentTripBanner';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { NoTripState } from '../components/ui/NoTripState';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -59,6 +60,8 @@ export function PreparationPage() {
           </button>
         }
       />
+
+      <CurrentTripBanner trip={selectedTrip} />
 
       <div className="mt-7 rounded-2xl border border-line bg-white p-5 shadow-card">
         <div className="flex items-center justify-between gap-4">
