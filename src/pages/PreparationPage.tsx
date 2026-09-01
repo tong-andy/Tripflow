@@ -100,31 +100,29 @@ export function PreparationPage() {
                 </div>
                 <ChevronDown className="size-4 text-muted transition-transform group-open:rotate-180" />
               </summary>
-              <div className="border-t border-line px-4 py-3 sm:px-6">
-                {items.length ? (
-                  <ul className="divide-y divide-line">
-                    {items.map((item) => (
-                      <li key={item.id} className="flex min-h-14 items-center gap-3 py-2">
+              <div className="border-t border-line p-3 sm:p-5">
+                <ul data-testid={`preparation-grid-${category}`} className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {items.map((item) => (
+                      <li key={item.id} className={`flex min-h-24 items-start gap-3 rounded-xl border p-3 transition-colors ${item.completed ? 'border-line/70 bg-canvas/70' : 'border-line bg-white'}`}>
                         <button
                           type="button"
                           disabled={isSaving}
                           onClick={() => void togglePreparationItem(item.id).catch(() => undefined)}
                           aria-label={`${item.completed ? '标记未完成' : '标记完成'}：${item.title}`}
-                          className={`grid size-7 shrink-0 place-items-center rounded-full ${item.completed ? 'bg-brand text-white' : 'border border-line text-transparent'}`}
+                          className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-full ${item.completed ? 'bg-brand text-white' : 'border border-line text-transparent hover:border-brand'}`}
                         >
                           <Check className="size-4" strokeWidth={3} />
                         </button>
                         <div className="min-w-0 flex-1">
                           <p className={`text-sm ${item.completed ? 'text-muted line-through' : 'font-medium'}`}>{item.title}</p>
-                          {item.notes ? <p className="mt-1 text-xs text-muted">{item.notes}</p> : null}
+                          {item.notes ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{item.notes}</p> : null}
                         </div>
-                        <button type="button" aria-label={`编辑：${item.title}`} onClick={() => { setEditingItem(item); setInitialCategory(undefined); setFormOpen(true); }} className="grid size-10 place-items-center rounded-lg text-muted hover:bg-canvas"><Pencil className="size-4" /></button>
-                        <button type="button" aria-label={`删除：${item.title}`} onClick={() => setDeletingItem(item)} className="grid size-10 place-items-center rounded-lg text-muted hover:bg-red-50 hover:text-red-600"><Trash2 className="size-4" /></button>
+                        <div className="-mr-1 -mt-1 flex shrink-0"><button type="button" aria-label={`编辑：${item.title}`} onClick={() => { setEditingItem(item); setInitialCategory(undefined); setFormOpen(true); }} className="grid size-10 place-items-center rounded-lg text-muted hover:bg-canvas hover:text-ink"><Pencil className="size-4" /></button>
+                        <button type="button" aria-label={`删除：${item.title}`} onClick={() => setDeletingItem(item)} className="grid size-10 place-items-center rounded-lg text-muted hover:bg-red-50 hover:text-red-600"><Trash2 className="size-4" /></button></div>
                       </li>
                     ))}
-                  </ul>
-                ) : <p className="py-4 text-center text-sm text-muted">这个分类还没有事项</p>}
-                <button type="button" onClick={() => openCreate(category)} className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm font-semibold text-brand hover:bg-brand-soft"><Plus className="size-4" /> 新增事项</button>
+                  <li className="min-h-24"><button type="button" aria-label="新增事项" onClick={() => openCreate(category)} className="inline-flex size-full min-h-24 items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-canvas/40 text-sm font-semibold text-brand hover:border-brand/35 hover:bg-brand-soft"><Plus className="size-4" /> {items.length ? '新增事项' : '新增第一项'}</button></li>
+                </ul>
               </div>
             </details>
           );

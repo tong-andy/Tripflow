@@ -13,9 +13,9 @@ This document records the current repository state. Use the current code and mig
 
 ## 2. Current Phase
 
-**Current Phase: Phase 03B.5**
+**Current Phase: Phase 03B.5.1**
 
-TripFlow now uses one responsive five-item information architecture. The user-level My Trips home combines a structured-city travel footprint, dynamic year filters, cross-trip statistics, spending, and a timeline; profile/preferences are available from its settings drawer. The selected-trip overview and six-section preparation center have been reorganized without changing the stable Today, Records, spending, map-navigation, authentication, or PWA-shell behavior.
+TripFlow uses one responsive five-item information architecture. The user-level My Trips home combines a structured-city travel footprint, dynamic year filters, cross-trip statistics, spending, and a timeline; its header is no longer presented as belonging to a selected trip. Phase 03B.5.1 replaces the abstract footprint backdrop with lightweight real country boundaries and increases preparation-item density responsively without changing business data, schema, or stable trip-level behavior.
 
 ## 3. Current Navigation
 
@@ -54,7 +54,8 @@ Desktop, tablet, mobile web, and PWA use the same five modules. `/profile` is a 
 - New trips select one or more destinations from a lightweight local city catalog; users never enter coordinates.
 - Trip creation atomically generates the inclusive date range and structured destinations through `create_trip_with_days_v3`.
 - Existing trips retain their legacy destination text; only trips with structured destinations appear on the footprint map.
-- The My Trips home provides an SVG world footprint, dynamic year/all filters, cross-trip dashboard, per-currency spending, longest completed trip, and date-sorted timeline.
+- The My Trips home provides a real-country-boundary SVG world footprint, dynamic year/all filters, cross-trip dashboard, per-currency spending, longest completed trip, and date-sorted timeline.
+- The My Trips global header omits the selected-trip control and duplicate create action; trip-level pages retain the selected-trip control, and My Trips keeps one contextual create action in its content.
 - Upcoming, active, and completed status is calculated in each trip's timezone.
 - Selected-trip overview has a current-trip header, status, cities/date/duration, edit action, recent-trip switcher, preparation and itinerary progress, scoped spending/budget, next itinerary item, and trip note.
 - Per-trip budget, timezone, and a nullable trip-level note of up to 10,000 characters.
@@ -65,6 +66,7 @@ Desktop, tablet, mobile web, and PWA use the same five modules. `/profile` is a 
 - Trip-scoped checklist grouped into six ordered sections: transit, accommodation, documents, activities, connectivity, and essentials.
 - Create, edit, complete/uncomplete, and confirm-delete actions.
 - Overall and per-category progress display, collapsible vertical sections, notes, and an add action within every section that preselects its category.
+- Items use a responsive checklist grid within each vertical section: one column on mobile, two on tablet, and three on wide desktop layouts.
 - The Phase 03B.5 migration maps legacy booking to activities and packing/other to essentials without deleting rows.
 
 ### Itinerary
@@ -123,7 +125,7 @@ Desktop, tablet, mobile web, and PWA use the same five modules. `/profile` is a 
 - External navigation links for Apple Maps, AMap, Baidu Maps, and Google Maps.
 - `system` resolves to Apple Maps on Apple platforms and Google Maps otherwise.
 - The saved user map preference is applied to itinerary and Today links.
-- The travel-footprint SVG is a separate lightweight visualization driven by stored destination coordinates; it is not a navigation map and uses no map SDK.
+- The travel-footprint map loads a static Natural Earth 1:110m country-boundary SVG and overlays destination-coordinate markers; it is not a navigation map, adds no map SDK, and keeps boundary data out of the JavaScript bundle.
 
 ### PWA / Offline
 
@@ -262,7 +264,7 @@ Quality commands:
 
 Current test coverage includes domain rules, repository ownership/scoping, migrations, authentication, providers, routing, PWA configuration, mobile safeguards, cloud-backed core flows, records, Today, responsive usability, structured destinations, footprint/year/timeline behavior, the six-section preparation center, and three Playwright viewports (1440, 768, 390).
 
-Latest local verification for Phase 03B.5:
+Latest local verification for Phase 03B.5.1:
 
 - Lint: passed (`npm run lint`)
 - Typecheck: passed (`npm run typecheck`)
@@ -283,7 +285,7 @@ Update these results only when the commands are actually run; update test counts
 
 - Business-data offline caching and offline write/synchronization are not implemented.
 - The Phase 02A versioned `localStorage` implementation remains as an explicit legacy/test adapter and is separate from production Supabase data.
-- The current production build emits a chunk-size warning: the main minified JavaScript chunk is about 652 kB (about 187 kB gzip), above Vite's 500 kB warning threshold.
+- The current production build emits a chunk-size warning: the main minified JavaScript chunk is 652.02 kB (186.42 kB gzip), above Vite's 500 kB warning threshold. The separate 136.07 kB world-boundary SVG is a static precached asset rather than JavaScript.
 - The bundled local city catalog intentionally covers major travel cities rather than every city worldwide; it is designed for incremental expansion.
 
 ## 14. Next / Not Started
@@ -295,5 +297,5 @@ No next phase is explicitly defined in the current repository.
 ## 15. Last Updated
 
 - **Date:** 2026-09-01
-- **Phase:** Phase 03B.5
-- **Summary:** Unified primary navigation, merged profile/preferences into My Trips, added structured destination footprints and year/timeline dashboard, rebuilt the selected-trip overview and preparation center, and added migration/RLS/test coverage.
+- **Phase:** Phase 03B.5.1
+- **Summary:** Simplified the user-level My Trips header, upgraded the footprint to real country boundaries with destination markers, and made preparation items a responsive one/two/three-column checklist grid; no schema or business-data behavior changed.

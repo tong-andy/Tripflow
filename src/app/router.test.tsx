@@ -50,6 +50,8 @@ describe('TripFlow navigation', () => {
     expect(
       await screen.findByRole('heading', { name: '我的旅行' }),
     ).toBeInTheDocument();
+    expect(screen.queryByLabelText('选择当前旅行')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '新建旅行' })).toHaveLength(1);
 
     const desktopNavigation = screen.getByRole('navigation', {
       name: '主导航',
@@ -59,5 +61,6 @@ describe('TripFlow navigation', () => {
     );
 
     expect(screen.getByRole('heading', { name: '日本关西 · 秋日旅行' })).toBeInTheDocument();
+    expect(screen.getByLabelText('选择当前旅行')).toBeInTheDocument();
   });
 });

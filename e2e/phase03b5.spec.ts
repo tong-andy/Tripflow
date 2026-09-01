@@ -31,8 +31,11 @@ test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, over
     await expect(navigation.getByRole('link', { name: label, exact: true })).toBeVisible();
   }
   await expect(navigation.getByRole('link', { name: '我的', exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('选择当前旅行')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '新建旅行', exact: true })).toHaveCount(1);
 
   await expect(page.getByRole('region', { name: '世界旅行足迹' })).toBeVisible();
+  await expect(page.getByTestId('world-country-boundaries')).toHaveAttribute('href', '/data/world-110m.svg');
   await expect(page.getByRole('region', { name: '旅行时间轴' })).toContainText('2026 巴黎');
   await page.getByRole('button', { name: '2025', exact: true }).click();
   await expect(page.getByRole('img', { name: /显示 1 个去过的城市/ })).toBeVisible();
@@ -48,9 +51,13 @@ test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, over
   const closeSettings = page.getByRole('button', { name: page.viewportSize()!.width < 768 ? '返回' : '关闭设置' });
   await closeSettings.click();
 
-  await page.getByLabel('选择当前旅行').selectOption({ label: '2026 巴黎' });
-  await navigation.getByRole('link', { name: '旅行总览', exact: true }).click();
+  await page.getByRole('region', { name: '旅行时间轴' })
+    .locator('article')
+    .filter({ hasText: '2026 巴黎' })
+    .getByRole('link', { name: '进入旅行总览' })
+    .click();
   await expect(page.getByRole('heading', { name: '2026 巴黎' })).toBeVisible();
+  await expect(page.getByLabel('选择当前旅行')).toBeVisible();
   await page.getByRole('button', { name: /2026 巴黎/ }).first().click();
   await expect(page.getByRole('button', { name: /查看全部旅行/ })).toBeVisible();
   await page.getByRole('button', { name: /2025 东京/ }).click();
@@ -67,4 +74,27 @@ test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, over
   await page.getByLabel('事项名称').fill('检查护照');
   await page.getByRole('button', { name: '添加', exact: true }).click();
   await expect(documentSection.getByText('检查护照')).toBeVisible();
+
+  const documentGrid = page.getByTestId('preparation-grid-documents');
+  const columnCount = await documentGrid.evaluate((element) =>
+    getComputedStyle(element).gridTemplateColumns.split(' ').length,
+  );
+  const viewportWidth = page.viewportSize()!.width;
+  expect(columnCount).toBe(viewportWidth >= 1200 ? 3 : viewportWidth >= 768 ? 2 : 1);
+
+  await page.getByLabel('标记完成：检查护照').click();
+  await expect(page.getByLabel('标记未完成：检查护照')).toBeVisible();
+  await page.getByLabel('编辑：检查护照').click();
+  await page.getByLabel('备注（可选）').fill('有效期六个月以上');
+  await page.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(documentSection.getByText('有效期六个月以上')).toBeVisible();
+
+  await documentSection.locator('summary').click();
+  await expect(documentSection).not.toHaveAttribute('open', '');
+  await documentSection.locator('summary').click();
+  await expect(documentSection).toHaveAttribute('open', '');
+
+  await page.getByLabel('删除：检查护照').click();
+  await page.getByRole('button', { name: '确认删除' }).click();
+  await expect(documentSection.getByText('检查护照')).toHaveCount(0);
 });

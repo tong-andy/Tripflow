@@ -126,6 +126,7 @@ test('persists map preference and scopes trip data including completed history',
   await page.reload();
   await expect(page.getByLabel('默认地图')).toHaveValue('amap');
   await page.getByRole('dialog', { name: '设置' }).getByRole('button', { name: /返回|关闭设置/ }).click();
+  await page.getByRole('link', { name: '旅行总览', exact: true }).click();
   await selectTrip(page, 'A旅行');
   await page.getByRole('link', { name: '行程', exact: true }).click();
   await expect(page.getByLabel('导航到A地点')).toHaveAttribute('href', /uri\.amap\.com/);
