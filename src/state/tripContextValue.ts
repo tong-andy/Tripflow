@@ -7,6 +7,7 @@ import type {
   ItineraryStatus,
   PreparationItem,
   Trip,
+  TripDestinationInput,
   UpdateItineraryItemInput,
   UpdateTripInput,
 } from '../types/trip';
@@ -21,13 +22,17 @@ export interface TripContextValue extends TripState {
   clearError: () => void;
   addTrip: (input: CreateTripInput) => Promise<Trip>;
   updateTrip: (tripId: string, input: UpdateTripInput) => Promise<Trip>;
+  replaceTripDestinations: (
+    tripId: string,
+    destinations: TripDestinationInput[],
+  ) => Promise<Trip>;
   deleteTrip: (tripId: string) => Promise<void>;
   addPreparationItem: (
     input: CreatePreparationItemInput,
   ) => Promise<PreparationItem>;
   updatePreparationItem: (
     itemId: string,
-    updates: Pick<PreparationItem, 'title' | 'category'>,
+    updates: Pick<PreparationItem, 'title' | 'category' | 'notes'>,
   ) => Promise<PreparationItem>;
   togglePreparationItem: (itemId: string) => Promise<void>;
   deletePreparationItem: (itemId: string) => Promise<void>;

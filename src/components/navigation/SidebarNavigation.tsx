@@ -41,14 +41,6 @@ export function SidebarNavigation() {
           ))}
         </div>
       </nav>
-
-      <div className="m-4 rounded-2xl border border-line bg-canvas p-4">
-        <p className="text-xs font-semibold text-ink">下一段旅程</p>
-        <p className="mt-1 text-xs leading-5 text-muted">大阪出发还有 18 天</p>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line">
-          <div className="h-full w-[68%] rounded-full bg-brand" />
-        </div>
-      </div>
     </aside>
   );
 }

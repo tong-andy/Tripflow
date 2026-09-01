@@ -41,17 +41,18 @@ export type UpdateUserProfileInput = Pick<
 >;
 
 export interface AnnualTravelStats {
-  year: number;
+  year: number | null;
   totalTrips: number;
   completedTrips: number;
   totalDays: number;
-  destinations: number;
+  cities: number;
+  countries: number;
   expensesByCurrency: Record<string, number>;
   longestTrip: Pick<Trip, 'id' | 'name'> & { days: number } | null;
 }
 
 export interface ProfileData {
   profile: UserProfile;
-  annualExpenses: Expense[];
-  annualPurchases: Purchase[];
+  expenses: Expense[];
+  purchases: Purchase[];
 }

@@ -64,6 +64,25 @@ export function createLegacyTripRepository(
       }));
     },
 
+    async replaceTripDestinations(_userId, tripId, destinations) {
+      const timestamp = new Date().toISOString();
+      return replaceTrip(tripId, (trip) => ({
+        ...trip,
+        destinations: destinations.map((destination, index) => ({
+          id: createId('destination'),
+          tripId,
+          ...destination,
+          sortOrder: index,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        })),
+        destination:
+          destinations.map((destination) => destination.cityName).join(' · ') ||
+          trip.destination,
+        updatedAt: timestamp,
+      }));
+    },
+
     async deleteTrip(_userId, tripId) {
       writeTrips(readTrips().filter((trip) => trip.id !== tripId));
     },
@@ -98,6 +117,7 @@ export function createLegacyTripRepository(
         title: input.title.trim(),
         category: input.category,
         completed: false,
+        notes: input.notes.trim(),
         createdAt: timestamp,
         updatedAt: timestamp,
       };

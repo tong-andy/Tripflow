@@ -1,0 +1,70 @@
+import { expect, test, type Page } from '@playwright/test';
+import { installCloudApiMock, selectDestinationCity } from './cloud';
+
+async function login(page: Page) {
+  await page.goto('/login');
+  await page.getByLabel('邮箱地址').fill('e2e@example.com');
+  await page.getByLabel('密码').fill('password123');
+  await page.getByRole('button', { name: '登录 TripFlow' }).click();
+}
+
+async function createTrip(page: Page, name: string, city: string, start: string, end: string) {
+  await page.goto('/trips');
+  await page.getByRole('button', { name: '新建旅行' }).first().click();
+  await page.getByLabel('旅行名称').fill(name);
+  await selectDestinationCity(page, city);
+  await page.getByLabel('出发地').fill('上海');
+  await page.getByLabel('出发日期').fill(start);
+  await page.getByLabel('返程日期').fill(end);
+  await page.getByRole('button', { name: '创建旅行' }).click();
+}
+
+test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, overview and preparation', async ({ page }) => {
+  await installCloudApiMock(page);
+  await login(page);
+  await createTrip(page, '2025 东京', '东京', '2025-06-01', '2025-06-03');
+  await createTrip(page, '2026 巴黎', '巴黎', '2026-10-01', '2026-10-05');
+  await page.goto('/trips');
+
+  const navigation = page.getByRole('navigation', { name: page.viewportSize()!.width < 768 ? '移动端主导航' : '主导航' });
+  for (const label of ['我的旅行', '旅行总览', '准备', '行程', '记录']) {
+    await expect(navigation.getByRole('link', { name: label, exact: true })).toBeVisible();
+  }
+  await expect(navigation.getByRole('link', { name: '我的', exact: true })).toHaveCount(0);
+
+  await expect(page.getByRole('region', { name: '世界旅行足迹' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '旅行时间轴' })).toContainText('2026 巴黎');
+  await page.getByRole('button', { name: '2025', exact: true }).click();
+  await expect(page.getByRole('img', { name: /显示 1 个去过的城市/ })).toBeVisible();
+  await expect(page.getByRole('region', { name: '旅行时间轴' })).toContainText('2025 东京');
+  await expect(page.getByRole('region', { name: '旅行时间轴' })).not.toContainText('2026 巴黎');
+  await page.getByLabel('查看城市：东京').click();
+  await expect(page.getByRole('region', { name: '世界旅行足迹' }).getByRole('status')).toContainText('2025 东京');
+  await page.getByRole('button', { name: '全部', exact: true }).click();
+  await expect(page.getByRole('img', { name: /显示 2 个去过的城市/ })).toBeVisible();
+
+  await page.getByRole('button', { name: '打开设置' }).click();
+  await expect(page.getByRole('dialog', { name: '设置' })).toBeVisible();
+  const closeSettings = page.getByRole('button', { name: page.viewportSize()!.width < 768 ? '返回' : '关闭设置' });
+  await closeSettings.click();
+
+  await page.getByLabel('选择当前旅行').selectOption({ label: '2026 巴黎' });
+  await navigation.getByRole('link', { name: '旅行总览', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '2026 巴黎' })).toBeVisible();
+  await page.getByRole('button', { name: /2026 巴黎/ }).first().click();
+  await expect(page.getByRole('button', { name: /查看全部旅行/ })).toBeVisible();
+  await page.getByRole('button', { name: /2025 东京/ }).click();
+  await expect(page.getByRole('heading', { name: '2025 东京' })).toBeVisible();
+
+  await navigation.getByRole('link', { name: '准备', exact: true }).click();
+  for (const label of ['通行', '住宿', '证件', '预订与活动', '网络与设备', '生活用品']) {
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole('button', { name: '新增事项' })).toHaveCount(6);
+  const documentSection = page.locator('details').filter({ hasText: '证件' });
+  await documentSection.getByRole('button', { name: '新增事项' }).click();
+  await expect(page.getByLabel('分类')).toHaveValue('documents');
+  await page.getByLabel('事项名称').fill('检查护照');
+  await page.getByRole('button', { name: '添加', exact: true }).click();
+  await expect(documentSection.getByText('检查护照')).toBeVisible();
+});

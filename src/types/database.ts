@@ -126,6 +126,41 @@ export interface Database {
         };
         Relationships: [];
       };
+      trip_destinations: {
+        Row: {
+          id: string;
+          user_id: string;
+          trip_id: string;
+          city_name: string;
+          country_name: string;
+          latitude: number;
+          longitude: number;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          trip_id: string;
+          city_name: string;
+          country_name: string;
+          latitude: number;
+          longitude: number;
+          sort_order: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          city_name?: string;
+          country_name?: string;
+          latitude?: number;
+          longitude?: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       preparation_items: {
         Row: {
           id: string;
@@ -134,6 +169,7 @@ export interface Database {
           title: string;
           category: string;
           completed: boolean;
+          notes: string;
           created_at: string;
           updated_at: string;
         };
@@ -144,6 +180,7 @@ export interface Database {
           title: string;
           category: string;
           completed?: boolean;
+          notes?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -151,6 +188,7 @@ export interface Database {
           title?: string;
           category?: string;
           completed?: boolean;
+          notes?: string;
           updated_at?: string;
         };
         Relationships: [];
@@ -236,6 +274,22 @@ export interface Database {
       create_trip_with_days_v2: {
         Args: { p_name: string; p_destination: string; p_departure_location: string; p_start_date: string; p_end_date: string; p_timezone: string };
         Returns: string;
+      };
+      create_trip_with_days_v3: {
+        Args: {
+          p_name: string;
+          p_destination: string;
+          p_departure_location: string;
+          p_start_date: string;
+          p_end_date: string;
+          p_timezone: string;
+          p_destinations: Json;
+        };
+        Returns: string;
+      };
+      replace_trip_destinations: {
+        Args: { p_trip_id: string; p_destinations: Json };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

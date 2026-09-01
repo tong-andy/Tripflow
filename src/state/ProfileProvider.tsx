@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   supabaseProfileRepository,
   type ProfileRepository,
 } from '../services/profileRepository';
-import { buildAnnualTravelStats } from '../domain/profile';
 import type { Expense, Purchase } from '../types/archive';
 import type { UpdateUserProfileInput, UserProfile } from '../types/profile';
 import { useAuth } from './useAuth';
-import { useTrips } from './useTrips';
 import { ProfileContext } from './profileContextValue';
 
 export function ProfileProvider({
@@ -18,35 +16,32 @@ export function ProfileProvider({
   repository?: ProfileRepository;
 }) {
   const { user } = useAuth();
-  const { trips } = useTrips();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [annualExpenses, setAnnualExpenses] = useState<Expense[]>([]);
-  const [annualPurchases, setAnnualPurchases] = useState<Purchase[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const year = new Date().getFullYear();
-
   const load = useCallback(async () => {
     if (!user) {
       setProfile(null);
-      setAnnualExpenses([]);
-      setAnnualPurchases([]);
+      setExpenses([]);
+      setPurchases([]);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      const data = await repository.loadProfile(user.id, year);
+      const data = await repository.loadProfile(user.id);
       setProfile(data.profile);
-      setAnnualExpenses(data.annualExpenses);
-      setAnnualPurchases(data.annualPurchases);
+      setExpenses(data.expenses);
+      setPurchases(data.purchases);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '用户设置加载失败。');
     } finally {
       setIsLoading(false);
     }
-  }, [repository, user, year]);
+  }, [repository, user]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
@@ -66,16 +61,12 @@ export function ProfileProvider({
     }
   }
 
-  const annualStats = useMemo(
-    () => buildAnnualTravelStats(trips, annualExpenses, annualPurchases, year),
-    [annualExpenses, annualPurchases, trips, year],
-  );
-
   return (
     <ProfileContext.Provider
       value={{
         profile,
-        annualStats,
+        expenses,
+        purchases,
         isLoading,
         isSaving,
         error,

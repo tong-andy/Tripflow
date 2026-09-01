@@ -54,10 +54,6 @@ Database:
 
 - PostgreSQL
 
-Local cache:
-
-- IndexedDB
-
 PWA:
 
 - vite-plugin-pwa
@@ -112,7 +108,16 @@ Users must never be able to access another user's travel data.
 
 ## Offline Behavior
 
-Previously synchronized itinerary data should remain readable when offline.
+Current:
+
+- The PWA app shell can open offline after a successful prior load.
+- Supabase API responses are not cached; business data requires a network connection to load.
+- Business-data offline cache, IndexedDB persistence, offline write queues, and sync conflict handling are not implemented.
+
+Future direction:
+
+- If a future offline phase is explicitly requested, consider an IndexedDB read cache for the recent trip or Today data, limited offline writes, and reconnect synchronization.
+- These are future-work directions, not current capabilities.
 
 Do not implement complex offline synchronization unless explicitly requested.
 
@@ -120,13 +125,15 @@ Do not implement complex offline synchronization unless explicitly requested.
 
 ## Development Rules
 
-Before implementing a feature:
+Before starting a development task:
 
-1. Read the relevant existing code.
-2. Understand the current architecture.
-3. Avoid modifying unrelated code.
-4. Prefer simple solutions.
-5. Avoid unnecessary dependencies.
+1. Read `AGENTS.md` and `PROJECT_STATUS.md`.
+2. Read the relevant existing code and verify the current repository state.
+3. Treat `PROJECT_STATUS.md` and the current code as the primary sources of project status; do not rely only on historical chat context.
+4. Understand the current architecture.
+5. Avoid modifying unrelated code.
+6. Prefer simple solutions.
+7. Avoid unnecessary dependencies.
 
 After implementation:
 
@@ -135,6 +142,10 @@ After implementation:
 3. Run relevant tests.
 4. Run the production build.
 5. Fix errors before considering the task complete.
+
+Before finishing a task, check whether the work materially changed the current phase, major features, navigation, data model, migrations, Provider / Repository architecture, PWA / offline capabilities, or known issues. If it did, update `PROJECT_STATUS.md` in the same task so it remains consistent with the code.
+
+Small copy changes, CSS-only adjustments, and bug fixes with no architectural or project-status impact do not require a `PROJECT_STATUS.md` update.
 
 ---
 
@@ -176,7 +187,7 @@ V1 includes:
 - responsive mobile UI
 - PWA
 - cloud synchronization
-- basic offline reading
+- app shell offline access
 
 V1 does NOT include:
 

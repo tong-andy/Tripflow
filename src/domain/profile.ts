@@ -16,17 +16,21 @@ export function buildAnnualTravelStats(
   trips: Trip[],
   expenses: Expense[],
   purchases: Purchase[],
-  year: number,
+  year: number | null,
   now = new Date(),
 ): AnnualTravelStats {
-  const annualTrips = trips.filter(
-    (trip) => Number(trip.startDate.slice(0, 4)) === year,
-  );
+  const annualTrips = year === null
+    ? trips
+    : trips.filter((trip) => Number(trip.startDate.slice(0, 4)) === year);
+  const tripIds = new Set(annualTrips.map((trip) => trip.id));
   const completed = annualTrips.filter(
     (trip) =>
       getTripStatus(trip, now) === 'completed',
   );
-  const expensesByCurrency = totalsByCurrency(expenses, purchases);
+  const expensesByCurrency = totalsByCurrency(
+    expenses.filter((item) => tripIds.has(item.tripId)),
+    purchases.filter((item) => tripIds.has(item.tripId)),
+  );
   const longest = completed.reduce<Trip | null>(
     (current, trip) =>
       !current || trip.days.length > current.days.length ? trip : current,
@@ -37,7 +41,18 @@ export function buildAnnualTravelStats(
     totalTrips: annualTrips.length,
     completedTrips: completed.length,
     totalDays: completed.reduce((total, trip) => total + trip.days.length, 0),
-    destinations: new Set(completed.map((trip) => trip.destination.trim())).size,
+    cities: new Set(
+      annualTrips.flatMap((trip) =>
+        trip.destinations.map((destination) =>
+          `${destination.cityName}\u0000${destination.countryName}`,
+        ),
+      ),
+    ).size,
+    countries: new Set(
+      annualTrips.flatMap((trip) =>
+        trip.destinations.map((destination) => destination.countryName),
+      ),
+    ).size,
     expensesByCurrency,
     longestTrip: longest
       ? { id: longest.id, name: longest.name, days: longest.days.length }

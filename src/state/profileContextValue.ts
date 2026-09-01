@@ -1,13 +1,14 @@
 import { createContext } from 'react';
 import type {
-  AnnualTravelStats,
   UpdateUserProfileInput,
   UserProfile,
 } from '../types/profile';
+import type { Expense, Purchase } from '../types/archive';
 
 export interface ProfileContextValue {
   profile: UserProfile | null;
-  annualStats: AnnualTravelStats;
+  expenses: Expense[];
+  purchases: Purchase[];
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;

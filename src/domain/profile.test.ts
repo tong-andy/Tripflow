@@ -20,6 +20,7 @@ function trip(id: string, destination: string, startDate: string, endDate: strin
     })),
     preparationItems: [],
     itineraryItems: [],
+    destinations: [{ id: `${id}-destination`, tripId: id, cityName: destination, countryName: '日本', latitude: 35, longitude: 139, sortOrder: 0, createdAt: '', updatedAt: '' }],
     budgetAmount: null,
     budgetCurrency: null,
     createdAt: `${startDate}T00:00:00Z`,
@@ -30,7 +31,7 @@ function trip(id: string, destination: string, startDate: string, endDate: strin
 function expense(currency: string, amount: number): Expense {
   return {
     id: `${currency}-${amount}`,
-    tripId: 'trip',
+    tripId: 'a',
     date: '2026-01-01',
     title: '消费',
     amount,
@@ -43,7 +44,7 @@ function expense(currency: string, amount: number): Expense {
 }
 
 function purchase(currency: string, amount: number): Purchase {
-  return { id: `purchase-${currency}`, tripId: 'trip', date: '2026-01-01', title: '购物', amount, currency, location: '', recipient: '', notes: '', organized: false, purchased: true, includeInExpenses: true, createdAt: '', updatedAt: '' };
+  return { id: `purchase-${currency}`, tripId: 'a', date: '2026-01-01', title: '购物', amount, currency, location: '', recipient: '', notes: '', organized: false, purchased: true, includeInExpenses: true, createdAt: '', updatedAt: '' };
 }
 
 describe('annual profile statistics', () => {
@@ -64,7 +65,8 @@ describe('annual profile statistics', () => {
       totalTrips: 3,
       completedTrips: 2,
       totalDays: 8,
-      destinations: 1,
+      cities: 2,
+      countries: 1,
       expensesByCurrency: { CNY: 120, JPY: 800 },
       longestTrip: { id: 'b', days: 5 },
     });

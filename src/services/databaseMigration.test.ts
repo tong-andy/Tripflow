@@ -5,6 +5,7 @@ import travelModeMigrationSql from '../../supabase/migrations/20260831000400_add
 import profileMigrationSql from '../../supabase/migrations/20260831000500_create_user_profiles.sql?raw';
 import recordCenterMigrationSql from '../../supabase/migrations/20260831000600_record_center_preferences_and_purchase_spending.sql?raw';
 import travelNoteMigrationSql from '../../supabase/migrations/20260831000700_add_trip_travel_note.sql?raw';
+import destinationMigrationSql from '../../supabase/migrations/20260831000800_trip_destinations_and_preparation_center.sql?raw';
 
 const tables = [
   'trips',
@@ -116,4 +117,32 @@ describe('Phase 03B.3 record center migration',()=>{
 
 describe('Phase 03B.4 travel note migration',()=>{
   it('adds a bounded nullable trip note without changing RLS',()=>{expect(travelNoteMigrationSql).toContain('alter table public.trips');expect(travelNoteMigrationSql).toContain('add column travel_note text');expect(travelNoteMigrationSql).toContain('length(travel_note) <= 10000');expect(travelNoteMigrationSql).toContain('no RLS changes');});
+});
+
+describe('Phase 03B.5 destination and preparation migration', () => {
+  it('creates owned structured destinations with RLS and parent ownership', () => {
+    expect(destinationMigrationSql).toContain('create table public.trip_destinations');
+    expect(destinationMigrationSql).toContain('foreign key (trip_id, user_id)');
+    expect(destinationMigrationSql).toContain('alter table public.trip_destinations enable row level security');
+    expect(destinationMigrationSql).toContain('revoke all on public.trip_destinations from anon');
+    expect(destinationMigrationSql).toContain('with check ((select auth.uid()) = user_id)');
+  });
+
+  it('creates authenticated atomic destination RPCs', () => {
+    expect(destinationMigrationSql).toContain('function public.create_trip_with_days_v3');
+    expect(destinationMigrationSql).toContain('function public.replace_trip_destinations');
+    expect(destinationMigrationSql).toContain('v_user_id uuid := auth.uid()');
+    expect(destinationMigrationSql).toContain('security invoker');
+    expect(destinationMigrationSql).toContain('from public, anon');
+    expect(destinationMigrationSql).toContain('to authenticated');
+  });
+
+  it('preserves preparation rows while mapping to six categories and adding notes', () => {
+    expect(destinationMigrationSql).toContain("add column notes text not null default ''");
+    expect(destinationMigrationSql).toContain("when 'booking' then 'activities'");
+    expect(destinationMigrationSql).toContain("when 'packing' then 'essentials'");
+    for (const category of ['transit', 'accommodation', 'documents', 'activities', 'connectivity', 'essentials']) {
+      expect(destinationMigrationSql).toContain(`'${category}'`);
+    }
+  });
 });

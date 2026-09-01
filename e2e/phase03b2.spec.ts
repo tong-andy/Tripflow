@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { installCloudApiMock } from './cloud';
+import { installCloudApiMock, selectDestinationCity } from './cloud';
 
 function dateOffset(days: number) {
   const date = new Date();
@@ -8,10 +8,10 @@ function dateOffset(days: number) {
 }
 
 async function createTrip(page: Page, name: string, start: string, end: string) {
-  await page.getByRole('link', { name: '旅行', exact: true }).click();
+  await page.getByRole('link', { name: '我的旅行', exact: true }).click();
   await page.getByRole('button', { name: '新建旅行' }).first().click();
   await page.getByLabel('旅行名称').fill(name);
-  await page.getByLabel('目的地', { exact: true }).fill(`${name}目的地`);
+  await selectDestinationCity(page, '东京');
   await page.getByLabel('出发地').fill('上海');
   await page.getByLabel('出发日期').fill(start);
   await page.getByLabel('返程日期').fill(end);
@@ -55,12 +55,12 @@ test('enforces Today routing and keeps the five-item mobile navigation', async (
   await expect(page).toHaveURL(/\/overview$/);
 
   const bottom = page.getByRole('navigation', { name: '移动端主导航' });
-  await expect(bottom.getByRole('link', { name: '旅行', exact: true })).toBeVisible();
+  await expect(bottom.getByRole('link', { name: '我的旅行', exact: true })).toBeVisible();
   await expect(bottom.getByRole('link', { name: '准备', exact: true })).toBeVisible();
   await expect(bottom.getByRole('link', { name: '行程', exact: true })).toBeVisible();
   await expect(bottom.getByRole('link', { name: '记录', exact: true })).toBeVisible();
-  await expect(bottom.getByRole('link', { name: '我的', exact: true })).toBeVisible();
-  await expect(bottom.getByRole('link', { name: '总览', exact: true })).toHaveCount(0);
+  await expect(bottom.getByRole('link', { name: '旅行总览', exact: true })).toBeVisible();
+  await expect(bottom.getByRole('link', { name: '我的', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('查看通知')).toHaveCount(0);
 });
 
@@ -75,7 +75,7 @@ test('persists map preference and scopes trip data including completed history',
   const today = dateOffset(0);
   await createTrip(page, 'A旅行', today, today);
   await page.getByRole('link', { name: '准备', exact: true }).click();
-  await page.getByRole('button', { name: '添加事项' }).click();
+  await page.getByRole('button', { name: '新增准备事项' }).click();
   await page.getByLabel('事项名称').fill('A护照');
   await page.getByRole('button', { name: '添加', exact: true }).click();
   await page.getByRole('link', { name: '行程', exact: true }).click();
@@ -92,7 +92,7 @@ test('persists map preference and scopes trip data including completed history',
   await createTrip(page, 'B旅行', dateOffset(2), dateOffset(2));
   await page.getByRole('link', { name: '准备', exact: true }).click();
   await expect(page.getByText('A护照', { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: '添加事项' }).click();
+  await page.getByRole('button', { name: '新增准备事项' }).click();
   await page.getByLabel('事项名称').fill('B签证');
   await page.getByRole('button', { name: '添加', exact: true }).click();
   await selectTrip(page, 'A旅行');
@@ -118,15 +118,14 @@ test('persists map preference and scopes trip data including completed history',
   await selectTrip(page, '历史旅行');
   await expect(page.getByText('历史车票', { exact: true })).toBeVisible();
 
-  await page.getByRole('link', { name: '我的', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '我的' })).toBeVisible();
-  await page.getByText('偏好设置', { exact: true }).click();
+  await page.goto('/trips?settings=profile');
+  await expect(page.getByRole('dialog', { name: '设置' })).toBeVisible();
   await page.getByLabel('默认地图').selectOption('amap');
   await page.getByRole('button', { name: '保存设置' }).click();
   await expect(page.getByText('设置已保存')).toBeVisible();
   await page.reload();
-  await page.getByText('偏好设置', { exact: true }).click();
   await expect(page.getByLabel('默认地图')).toHaveValue('amap');
+  await page.getByRole('dialog', { name: '设置' }).getByRole('button', { name: /返回|关闭设置/ }).click();
   await selectTrip(page, 'A旅行');
   await page.getByRole('link', { name: '行程', exact: true }).click();
   await expect(page.getByLabel('导航到A地点')).toHaveAttribute('href', /uri\.amap\.com/);

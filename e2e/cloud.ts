@@ -11,6 +11,7 @@ interface CloudRow {
 interface CloudStore {
   trips: CloudRow[];
   trip_days: CloudRow[];
+  trip_destinations: CloudRow[];
   preparation_items: CloudRow[];
   itinerary_items: CloudRow[];
   expenses: CloudRow[];
@@ -57,6 +58,7 @@ export async function installCloudApiMock(page: Page) {
   const store: CloudStore = {
     trips: [],
     trip_days: [],
+    trip_destinations: [],
     preparation_items: [],
     itinerary_items: [],
     expenses: [],
@@ -89,26 +91,26 @@ export async function installCloudApiMock(page: Page) {
     const resource = segments.at(-1);
     const method = request.method();
 
-    if ((resource === 'create_trip_with_days' || resource === 'create_trip_with_days_v2') && method === 'POST') {
-      const input = request.postDataJSON() as Record<string, string>;
+    if ((resource === 'create_trip_with_days' || resource === 'create_trip_with_days_v2' || resource === 'create_trip_with_days_v3') && method === 'POST') {
+      const input = request.postDataJSON() as Record<string, unknown>;
       const tripId = nextId('trip');
       const now = timestamp();
       store.trips.push({
         id: tripId,
         user_id: user.id,
-        name: input.p_name,
-        destination: input.p_destination,
-        departure_location: input.p_departure_location,
-        start_date: input.p_start_date,
-        end_date: input.p_end_date,
+        name: String(input.p_name),
+        destination: String(input.p_destination),
+        departure_location: String(input.p_departure_location),
+        start_date: String(input.p_start_date),
+        end_date: String(input.p_end_date),
         created_at: now,
         updated_at: now,
         budget_amount: null,
         budget_currency: null,
-        timezone: input.p_timezone ?? 'Asia/Shanghai',
+        timezone: String(input.p_timezone ?? 'Asia/Shanghai'),
         travel_note: null,
       });
-      datesBetween(input.p_start_date, input.p_end_date).forEach(
+      datesBetween(String(input.p_start_date), String(input.p_end_date)).forEach(
         (date, index) => {
           store.trip_days.push({
             id: nextId('day'),
@@ -121,7 +123,28 @@ export async function installCloudApiMock(page: Page) {
           });
         },
       );
+      const destinations = Array.isArray(input.p_destinations) ? input.p_destinations as Array<Record<string, unknown>> : [];
+      destinations.forEach((destination, index) => store.trip_destinations.push({
+        id: nextId('destination'), user_id: user.id, trip_id: tripId,
+        city_name: destination.city_name, country_name: destination.country_name,
+        latitude: destination.latitude, longitude: destination.longitude,
+        sort_order: index, created_at: now, updated_at: now,
+      }));
       await json(route, tripId);
+      return;
+    }
+
+    if (resource === 'replace_trip_destinations' && method === 'POST') {
+      const input = request.postDataJSON() as { p_trip_id: string; p_destinations: Array<Record<string, unknown>> };
+      store.trip_destinations = store.trip_destinations.filter((row) => row.trip_id !== input.p_trip_id);
+      const now = timestamp();
+      input.p_destinations.forEach((destination, index) => store.trip_destinations.push({
+        id: nextId('destination'), user_id: user.id, trip_id: input.p_trip_id,
+        city_name: destination.city_name, country_name: destination.country_name,
+        latitude: destination.latitude, longitude: destination.longitude,
+        sort_order: index, created_at: now, updated_at: now,
+      }));
+      await json(route, null);
       return;
     }
 
@@ -130,6 +153,7 @@ export async function installCloudApiMock(page: Page) {
       ![
         'trips',
         'trip_days',
+        'trip_destinations',
         'preparation_items',
         'itinerary_items',
         'expenses',
@@ -217,6 +241,7 @@ export async function installCloudApiMock(page: Page) {
       if (index >= 0) rows.splice(index, 1);
       if (table === 'trips' && id) {
         store.trip_days = store.trip_days.filter((row) => row.trip_id !== id);
+        store.trip_destinations = store.trip_destinations.filter((row) => row.trip_id !== id);
         store.preparation_items = store.preparation_items.filter(
           (row) => row.trip_id !== id,
         );
@@ -236,4 +261,10 @@ export async function installCloudApiMock(page: Page) {
   });
 
   return store;
+}
+
+export async function selectDestinationCity(page: Page, query = '东京') {
+  const combobox = page.getByRole('combobox', { name: '搜索目的地城市' });
+  await combobox.fill(query);
+  await page.getByRole('option').filter({ hasText: query }).first().click();
 }

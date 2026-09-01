@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { installCloudApiMock } from './cloud';
+import { installCloudApiMock, selectDestinationCity } from './cloud';
 
 test('persists the complete archive flow across refresh and login sessions', async ({page})=>{
  await installCloudApiMock(page); await page.goto('/login');
  await page.getByLabel('邮箱地址').fill('e2e@example.com'); await page.getByLabel('密码').fill('password123'); await page.getByRole('button',{name:'登录 TripFlow'}).click();
- await page.getByRole('button',{name:'新建旅行'}).first().click(); await page.getByLabel('旅行名称').fill('东京记录测试'); await page.getByLabel('目的地').fill('东京'); await page.getByLabel('出发地').fill('上海'); await page.getByLabel('出发日期').fill('2026-11-06'); await page.getByLabel('返程日期').fill('2026-11-08'); await page.getByRole('button',{name:'创建旅行'}).click();
- await page.getByRole('link',{name:'我的',exact:true}).click(); await page.getByText('偏好设置',{exact:true}).click(); await page.getByLabel('显示素材').check(); await page.getByRole('button',{name:'保存设置'}).click(); await page.getByRole('link',{name:'记录',exact:true}).click(); await expect(page.getByRole('heading',{name:'旅行记录'})).toBeVisible();
+ await page.getByRole('button',{name:'新建旅行'}).first().click(); await page.getByLabel('旅行名称').fill('东京记录测试'); await selectDestinationCity(page, '东京'); await page.getByLabel('出发地').fill('上海'); await page.getByLabel('出发日期').fill('2026-11-06'); await page.getByLabel('返程日期').fill('2026-11-08'); await page.getByRole('button',{name:'创建旅行'}).click();
+ await page.getByRole('link',{name:'我的旅行',exact:true}).click(); await page.getByRole('button',{name:'打开设置'}).click(); await page.getByLabel('显示素材').check(); await page.getByRole('button',{name:'保存设置'}).click(); await page.getByRole('dialog',{name:'设置'}).getByRole('button',{name:/返回|关闭设置/}).click(); await page.getByRole('link',{name:'记录',exact:true}).click(); await expect(page.getByRole('heading',{name:'旅行记录'})).toBeVisible();
  await page.getByRole('button',{name:'新增花费'}).click(); await page.getByLabel('消费名称').fill('拉面'); await page.getByLabel('消费金额').fill('1200'); await page.getByLabel('消费币种').fill('JPY'); await page.getByLabel('消费分类',{exact:true}).selectOption('food'); await page.getByRole('button',{name:'添加',exact:true}).click(); await expect(page.getByText('拉面')).toBeVisible();
  await page.reload(); await expect(page.getByText('拉面')).toBeVisible(); await page.getByRole('button',{name:'编辑'}).click(); await page.getByLabel('消费名称').fill('豚骨拉面'); await page.getByRole('button',{name:'保存',exact:true}).click(); await expect(page.getByText('豚骨拉面')).toBeVisible();
  await page.getByRole('button',{name:'设置'}).click(); await page.getByLabel('预算金额').fill('50000'); await page.getByLabel('预算币种').fill('JPY'); await page.getByRole('button',{name:'保存预算'}).click(); await expect(page.getByText(/50,000/)).toBeVisible();

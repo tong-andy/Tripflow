@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { installCloudApiMock } from './cloud';
+import { installCloudApiMock, selectDestinationCity } from './cloud';
 
 function localDate() {
   const date = new Date();
@@ -16,7 +16,7 @@ async function login(page: Page) {
 async function createTrip(page: Page, name: string) {
   await page.getByRole('button', { name: '新建旅行' }).first().click();
   await page.getByLabel('旅行名称').fill(name);
-  await page.getByLabel('目的地', { exact: true }).fill('东京');
+  await selectDestinationCity(page, '东京');
   await page.getByLabel('出发地').fill('上海');
   await page.getByLabel('出发日期').fill(localDate());
   await page.getByLabel('返程日期').fill(localDate());
@@ -48,15 +48,14 @@ test('uses Record naming and persists responsive module preferences', async ({ p
   await expect(tabs.getByRole('button', { name: '素材' })).toHaveCount(0);
   await expect(page.getByText('归档', { exact: true })).toHaveCount(0);
 
-  await page.getByRole('link', { name: '我的', exact: true }).click();
-  await page.getByText('偏好设置', { exact: true }).click();
+  await page.goto('/trips?settings=profile');
   await page.getByLabel('显示购物').uncheck();
   await page.getByLabel('显示素材').check();
   await page.getByRole('button', { name: '保存设置' }).click();
   await page.reload();
-  await page.getByText('偏好设置', { exact: true }).click();
   await expect(page.getByLabel('显示购物')).not.toBeChecked();
   await expect(page.getByLabel('显示素材')).toBeChecked();
+  await page.getByRole('dialog', { name: '设置' }).getByRole('button', { name: /返回|关闭设置/ }).click();
   await page.getByRole('link', { name: '记录', exact: true }).click();
   await expect(tabs.getByRole('button', { name: '购物' })).toHaveCount(0);
   await expect(tabs.getByRole('button', { name: '素材' })).toBeVisible();
@@ -103,8 +102,8 @@ test('aggregates purchased shopping once and applies only matching currency to b
   await page.getByRole('button', { name: '花费', exact: true }).click();
   await expect(total).toContainText('33,000');
 
-  await page.getByRole('link', { name: '我的', exact: true }).click();
-  const annual = page.getByRole('region', { name: '年度旅行消费' });
+  await page.goto('/trips');
+  const annual = page.getByRole('region', { name: '旅行消费' });
   await expect(annual).toContainText('JPY');
   await expect(annual).toContainText('33,000');
   await expect(annual).toContainText('USD');
@@ -130,11 +129,11 @@ test('keeps historical material discoverable until the user hides it without del
   await page.getByRole('button', { name: '素材' }).click();
   await expect(page.getByText('旧照片.jpg')).toBeVisible();
 
-  await page.getByRole('link', { name: '我的', exact: true }).click();
-  await page.getByText('偏好设置', { exact: true }).click();
+  await page.goto('/trips?settings=profile');
   await expect(page.getByLabel('显示素材')).toBeChecked();
   await page.getByLabel('显示素材').uncheck();
   await page.getByRole('button', { name: '保存设置' }).click();
+  await page.getByRole('dialog', { name: '设置' }).getByRole('button', { name: /返回|关闭设置/ }).click();
   await page.getByRole('link', { name: '记录', exact: true }).click();
   await expect(page.getByRole('button', { name: '素材' })).toHaveCount(0);
   expect(store.media_notes).toHaveLength(1);

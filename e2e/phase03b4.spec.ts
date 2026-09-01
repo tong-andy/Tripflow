@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { installCloudApiMock } from './cloud';
+import { installCloudApiMock, selectDestinationCity } from './cloud';
 
 function dateOffset(days: number) {
   const date = new Date(); date.setDate(date.getDate() + days);
@@ -15,7 +15,7 @@ async function createTrip(page: Page, name: string, start = dateOffset(1), end =
   await page.goto('/trips');
   await expect(page.getByRole('heading',{name:'我的旅行'})).toBeVisible();
   await page.getByRole('button',{name:'新建旅行'}).first().click();
-  await page.getByLabel('旅行名称').fill(name); await page.getByLabel('目的地',{exact:true}).fill('东京');
+  await page.getByLabel('旅行名称').fill(name); await selectDestinationCity(page, '东京');
   await page.getByLabel('出发地').fill('上海'); await page.getByLabel('出发日期').fill(start); await page.getByLabel('返程日期').fill(end);
   await page.getByRole('button',{name:'创建旅行'}).click();
 }
@@ -25,21 +25,18 @@ async function chooseTimezone(page: Page, label: string, query: string, option: 
   await input.fill(query); await page.getByRole('option',{name:option}).click();
 }
 
-test('puts the annual dashboard first and keeps profile sections collapsible',async({page})=>{
+test('puts the annual dashboard on My Trips and opens profile settings from the header',async({page})=>{
   await installCloudApiMock(page); await login(page); await createTrip(page,'年度面板旅行');
-  await page.getByRole('link',{name:'我的',exact:true}).click();
-  const dashboard=page.getByRole('region',{name:'年度旅行概览'}); await expect(dashboard).toBeVisible();
-  await expect(dashboard.getByText('本年度旅行')).toBeVisible(); await expect(dashboard.getByText('1 趟')).toBeVisible();
-  const personal=page.locator('details').filter({hasText:'个人资料'}); const preferences=page.locator('details').filter({hasText:'偏好设置'});
-  await expect(personal).not.toHaveAttribute('open',''); await expect(preferences).not.toHaveAttribute('open','');
-  expect((await dashboard.boundingBox())!.y).toBeLessThan((await personal.boundingBox())!.y);
-  await page.getByText('个人资料',{exact:true}).click(); await page.getByLabel('昵称').fill('旅行者');
-  await page.getByText('偏好设置',{exact:true}).click(); await chooseTimezone(page,'默认时区','东京',/东京.*Asia\/Tokyo/);
+  await page.getByRole('link',{name:'我的旅行',exact:true}).click();
+  const dashboard=page.getByRole('region',{name:'旅行统计'}); await expect(dashboard).toBeVisible();
+  await expect(dashboard.getByText('旅行次数')).toBeVisible(); await expect(dashboard.getByText('1 趟').first()).toBeVisible();
+  await page.getByRole('button',{name:'打开设置'}).click();
+  await page.getByLabel('昵称').fill('旅行者');
+  await chooseTimezone(page,'默认时区','东京',/东京.*Asia\/Tokyo/);
   await page.getByRole('button',{name:'保存设置'}).click(); await expect(page.getByText('设置已保存')).toBeVisible();
-  await expect(personal).toHaveAttribute('open',''); await expect(preferences).toHaveAttribute('open','');
-  await page.reload(); await expect(page.locator('details[open]')).toHaveCount(0);
-  await page.getByText('个人资料',{exact:true}).click(); await expect(page.getByLabel('昵称')).toHaveValue('旅行者');
-  await page.getByText('偏好设置',{exact:true}).click(); await expect(page.getByRole('combobox',{name:'默认时区'})).toHaveValue(/Asia\/Tokyo/);
+  await page.reload(); await expect(page.getByRole('dialog',{name:'设置'})).toBeVisible();
+  await expect(page.getByLabel('昵称')).toHaveValue('旅行者');
+  await expect(page.getByRole('combobox',{name:'默认时区'})).toHaveValue(/Asia\/Tokyo/);
 });
 
 test('renders a unified single-currency pie and switches currencies without mixing',async({page},testInfo)=>{
@@ -69,10 +66,11 @@ test('uses profile timezone for new trips while existing trips remain independen
   test.skip(testInfo.project.name!=='desktop-1440','single timezone relationship flow');
   const store=await installCloudApiMock(page); await login(page); await createTrip(page,'原有旅行');
   const originalTimezone=String(store.trips[0]?.timezone);
-  await page.getByRole('link',{name:'我的',exact:true}).click(); await page.getByText('偏好设置',{exact:true}).click();
+  await page.getByRole('link',{name:'我的旅行',exact:true}).click(); await page.getByRole('button',{name:'打开设置'}).click();
   await chooseTimezone(page,'默认时区','东京',/东京.*Asia\/Tokyo/); await page.getByRole('button',{name:'保存设置'}).click();
-  await createTrip(page,'新旅行'); await expect(page.getByRole('button',{name:/时区：/})).toContainText('Asia/Tokyo');
-  await page.getByLabel('选择当前旅行').selectOption({label:'原有旅行'}); await expect(page.getByRole('button',{name:/时区：/})).toContainText(originalTimezone); await expect(store.trips[0]?.timezone).toBe(originalTimezone);
-  await page.getByRole('button',{name:/时区：/}).click(); await chooseTimezone(page,'旅行时区','巴黎',/巴黎.*Europe\/Paris/); await page.getByRole('button',{name:'保存时区'}).click(); await expect(page.getByRole('button',{name:/时区：/})).toContainText('Europe/Paris');
-  await page.getByRole('link',{name:'我的',exact:true}).click(); await page.getByText('偏好设置',{exact:true}).click(); await expect(page.getByRole('combobox',{name:'默认时区'})).toHaveValue(/Asia\/Tokyo/);
+  await createTrip(page,'新旅行'); await page.getByRole('button',{name:'编辑旅行',exact:true}).click(); await expect(page.getByRole('combobox',{name:'旅行时区'})).toHaveValue(/Asia\/Tokyo/); await page.getByRole('button',{name:'取消'}).click();
+  await page.getByLabel('选择当前旅行').selectOption({label:'原有旅行'}); await expect(store.trips[0]?.timezone).toBe(originalTimezone);
+  await page.getByRole('button',{name:'编辑旅行',exact:true}).click(); await chooseTimezone(page,'旅行时区','巴黎',/巴黎.*Europe\/Paris/); await page.getByRole('button',{name:'保存旅行'}).click();
+  await page.getByRole('button',{name:'编辑旅行',exact:true}).click(); await expect(page.getByRole('combobox',{name:'旅行时区'})).toHaveValue(/Europe\/Paris/); await page.getByRole('button',{name:'取消'}).click();
+  await page.getByRole('link',{name:'我的旅行',exact:true}).click(); await page.getByRole('button',{name:'打开设置'}).click(); await expect(page.getByRole('combobox',{name:'默认时区'})).toHaveValue(/Asia\/Tokyo/);
 });

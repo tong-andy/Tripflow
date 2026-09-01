@@ -18,7 +18,7 @@ import type { ProfileRepository } from '../services/profileRepository';
 const authService = createAuthService(createTestSession());
 const tripRepository = createLegacyTripRepository(window.localStorage);
 const profileRepository: ProfileRepository = {
-  loadProfile: async (userId) => ({ profile: defaultUserProfile(userId), annualExpenses: [], annualPurchases: [] }),
+  loadProfile: async (userId) => ({ profile: defaultUserProfile(userId), expenses: [], purchases: [] }),
   saveProfile: async (userId, input) => ({ ...defaultUserProfile(userId), ...input, recordPreferencesConfigured: true }),
 };
 
@@ -58,6 +58,6 @@ describe('TripFlow navigation', () => {
       within(desktopNavigation).getByRole('link', { name: '旅行总览' }),
     );
 
-    expect(screen.getByRole('heading', { name: '旅行总览' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '日本关西 · 秋日旅行' })).toBeInTheDocument();
   });
 });

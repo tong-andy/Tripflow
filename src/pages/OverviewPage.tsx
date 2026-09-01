@@ -1,113 +1,79 @@
-import { ArrowUpRight, CalendarCheck2, CalendarDays, CheckCircle2, FileText, Pencil, Route } from 'lucide-react';
+import { ArrowUpRight, CalendarCheck2, CalendarDays, CheckCircle2, ChevronDown, FileText, Pencil, Route, Settings2, WalletCards } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { PageHeader } from '../components/ui/PageHeader';
+import { Link, useNavigate } from 'react-router-dom';
+import { EditTripDialog } from '../components/trips/EditTripDialog';
 import { NoTripState } from '../components/ui/NoTripState';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { totalsByCurrency } from '../domain/archive';
 import { getTripStats, sortItineraryItems } from '../domain/trips';
+import { getTodayTripDay, getTripStatus } from '../domain/travelMode';
 import { formatDateRange, formatDayDate } from '../lib/formatters';
+import { useProfile } from '../state/useProfile';
 import { useTrips } from '../state/useTrips';
-import { getTripStatus } from '../domain/travelMode';
-import { TimezoneCombobox } from '../components/ui/TimezoneCombobox';
-import { timezoneLabel } from '../domain/timezones';
+
+const statusLabels = { upcoming: '即将出发', active: '旅行中', completed: '已完成' } as const;
 
 export function OverviewPage() {
-  const { selectedTrip, updateTrip, isSaving } = useTrips();
-  const [timezoneOpen, setTimezoneOpen] = useState(false);
-  const [timezone, setTimezone] = useState(selectedTrip?.timezone ?? 'Asia/Shanghai');
-  const [noteEditor, setNoteEditor] = useState<{ tripId: string; draft: string } | null>(null);
+  const { trips, selectedTrip, selectTrip, updateTrip, isSaving } = useTrips();
+  const { expenses, purchases } = useProfile();
+  const navigate = useNavigate();
+  const [editOpen, setEditOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [noteEditor, setNoteEditor] = useState<string | null>(null);
+  const [renderedAt] = useState(() => new Date());
 
-  if (!selectedTrip) {
-    return <NoTripState />;
-  }
+  if (!selectedTrip) return <NoTripState />;
 
+  const status = getTripStatus(selectedTrip);
   const stats = getTripStats(selectedTrip);
-  const nextItem = sortItineraryItems(selectedTrip.itineraryItems)[0];
-  const nextItemDay = selectedTrip.days.find(
-    (day) => day.id === nextItem?.tripDayId,
+  const todayDay = getTodayTripDay(selectedTrip);
+  const nextItem = sortItineraryItems(selectedTrip.itineraryItems).find((item) => item.status === 'planned');
+  const nextItemDay = selectedTrip.days.find((day) => day.id === nextItem?.tripDayId);
+  const spending = totalsByCurrency(
+    expenses.filter((item) => item.tripId === selectedTrip.id),
+    purchases.filter((item) => item.tripId === selectedTrip.id),
   );
-  const statCards = [
-    {
-      label: '旅行日期',
-      value: `${stats.totalDays} 天`,
-      detail: formatDateRange(selectedTrip.startDate, selectedTrip.endDate),
-      icon: CalendarDays,
-    },
-    {
-      label: '准备进度',
-      value: `${stats.preparationPercent}%`,
-      detail: `${stats.preparationCompleted} / ${stats.preparationTotal} 项完成`,
-      icon: CheckCircle2,
-    },
-    {
-      label: '已规划行程',
-      value: `${stats.plannedDays} 天`,
-      detail: `共 ${stats.totalDays} 个旅行日`,
-      icon: Route,
-    },
-  ];
+  const cities = selectedTrip.destinations.map((destination) => destination.cityName).join(' · ') || selectedTrip.destination;
+  const recentTrips = [...trips].sort((a, b) => b.startDate.localeCompare(a.startDate)).slice(0, 5);
+  const todayNumber = todayDay?.dayNumber;
+  const daysUntil = Math.max(0, Math.ceil((new Date(`${selectedTrip.startDate}T00:00:00`).getTime() - renderedAt.getTime()) / 86_400_000));
 
   return (
     <section>
-      <PageHeader
-        eyebrow={`${selectedTrip.departureLocation} → ${selectedTrip.destination}`}
-        title="旅行总览"
-        description={`${selectedTrip.name} · ${formatDateRange(selectedTrip.startDate, selectedTrip.endDate)}`}
-        action={<div className="flex flex-wrap gap-2">{getTripStatus(selectedTrip)==='active'?<Link replace to="/today" className="inline-flex items-center gap-2 rounded-xl bg-brand-soft px-4 py-2.5 text-sm font-semibold text-brand"><CalendarCheck2 className="size-4"/>进入今天</Link>:null}<button type="button" onClick={()=>{setTimezone(selectedTrip.timezone);setTimezoneOpen(!timezoneOpen)}} className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold">时区：{timezoneLabel(selectedTrip.timezone)}</button></div>}
-      />
+      <header className="rounded-3xl bg-ink p-5 text-white shadow-card sm:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2"><StatusBadge tone={status === 'active' ? 'green' : status === 'upcoming' ? 'amber' : 'gray'}>{statusLabels[status]}</StatusBadge><span className="text-xs text-white/55">{selectedTrip.departureLocation} → {cities}</span></div>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{selectedTrip.name}</h1>
+            <p className="mt-2 text-sm text-white/65">{formatDateRange(selectedTrip.startDate, selectedTrip.endDate)} · {stats.totalDays} 天</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {status === 'active' ? <Link to="/today" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white"><CalendarCheck2 className="size-4" />进入今天</Link> : null}
+            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-semibold"><Settings2 className="size-4" />编辑旅行</button>
+          </div>
+        </div>
 
-      {timezoneOpen?<form onSubmit={event=>{event.preventDefault();void updateTrip(selectedTrip.id,{timezone}).then(()=>setTimezoneOpen(false)).catch(()=>undefined)}} className="mt-5 flex flex-col gap-3 rounded-2xl border border-brand/20 bg-brand-soft/50 p-4 sm:flex-row sm:items-end"><div className="min-w-0 flex-1"><TimezoneCombobox label="旅行时区" value={timezone} onChange={setTimezone}/></div><button disabled={isSaving} className="min-h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white">{isSaving?'保存中…':'保存时区'}</button></form>:null}
+        <div className="relative mt-6 border-t border-white/10 pt-5">
+          <button type="button" aria-expanded={switcherOpen} onClick={() => setSwitcherOpen((open) => !open)} className="flex min-h-11 w-full items-center justify-between rounded-xl bg-white/8 px-4 text-left sm:max-w-sm"><span><span className="block text-[10px] font-bold tracking-wide text-white/45">当前旅行</span><span className="text-sm font-semibold">{selectedTrip.name}</span></span><ChevronDown className={`size-4 transition-transform ${switcherOpen ? 'rotate-180' : ''}`} /></button>
+          {switcherOpen ? <div className="absolute left-0 top-full z-30 mt-2 w-full max-w-sm rounded-2xl border border-line bg-white p-2 text-ink shadow-xl">{recentTrips.map((trip) => <button key={trip.id} type="button" onClick={() => { selectTrip(trip.id); setSwitcherOpen(false); }} className={`block min-h-14 w-full rounded-xl px-3 py-2 text-left ${trip.id === selectedTrip.id ? 'bg-brand-soft' : 'hover:bg-canvas'}`}><span className="block text-sm font-semibold">{trip.name}</span><span className="mt-0.5 block text-xs text-muted">{formatDateRange(trip.startDate, trip.endDate)} · {statusLabels[getTripStatus(trip)]}</span></button>)}<button type="button" onClick={() => void navigate('/trips')} className="mt-1 min-h-11 w-full border-t border-line px-3 text-left text-sm font-semibold text-brand">查看全部旅行 →</button></div> : null}
+        </div>
+      </header>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        {statCards.map(({ label, value, detail, icon: Icon }) => (
-          <article key={label} className="rounded-2xl border border-line bg-white p-5 shadow-card">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-muted">{label}</p>
-              <Icon className="size-[18px] text-brand" />
-            </div>
-            <p className="mt-5 text-2xl font-bold tracking-tight text-ink">{value}</p>
-            <p className="mt-1 text-xs text-muted">{detail}</p>
-          </article>
-        ))}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-card"><CalendarDays className="size-5 text-brand" /><p className="mt-4 text-xs text-muted">{status === 'active' ? '当前进度' : status === 'upcoming' ? '出发倒计时' : '旅行时长'}</p><p className="mt-1 text-2xl font-bold">{status === 'active' ? `Day ${todayNumber ?? '—'} / ${stats.totalDays}` : status === 'upcoming' ? `${daysUntil} 天` : `${stats.totalDays} 天`}</p></article>
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-card"><CheckCircle2 className="size-5 text-brand" /><p className="mt-4 text-xs text-muted">准备完成度</p><p className="mt-1 text-2xl font-bold">{stats.preparationPercent}%</p><p className="mt-1 text-xs text-muted">{stats.preparationCompleted} / {stats.preparationTotal} 项</p></article>
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-card"><Route className="size-5 text-brand" /><p className="mt-4 text-xs text-muted">已规划行程</p><p className="mt-1 text-2xl font-bold">{stats.plannedDays} 天</p><p className="mt-1 text-xs text-muted">共 {selectedTrip.itineraryItems.length} 项安排</p></article>
+        <article className="rounded-2xl border border-line bg-white p-5 shadow-card"><WalletCards className="size-5 text-brand" /><p className="mt-4 text-xs text-muted">{selectedTrip.budgetAmount ? '预算 / 当前支出' : '当前支出'}</p>{Object.keys(spending).length ? Object.entries(spending).map(([currency, amount]) => <p key={currency} className="mt-1 text-lg font-bold">{currency} {amount.toLocaleString('zh-CN', { maximumFractionDigits: 2 })}{selectedTrip.budgetCurrency === currency && selectedTrip.budgetAmount ? ` / ${selectedTrip.budgetAmount.toLocaleString('zh-CN')}` : ''}</p>) : <p className="mt-1 text-2xl font-bold">暂无</p>}</article>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <article className="rounded-3xl border border-line bg-white p-6 shadow-card sm:p-7">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Next up</p>
-              <h2 className="mt-2 text-xl font-bold text-ink">
-                {nextItem?.placeName ?? '还没有行程安排'}
-              </h2>
-            </div>
-            {nextItemDay ? (
-              <span className="rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand">
-                DAY {String(nextItemDay.dayNumber).padStart(2, '0')}
-              </span>
-            ) : null}
-          </div>
-          <div className="mt-8 border-l-2 border-brand-soft pl-5">
-            <p className="text-sm font-semibold text-ink">
-              {nextItem && nextItemDay
-                ? `${nextItem.time ?? '灵活时间'} · ${formatDayDate(nextItemDay.date)}`
-                : '从每日行程开始规划第一站'}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-muted">
-              {nextItem?.notes || '添加地点、时间和停留时长后，会在这里显示下一项安排。'}
-            </p>
-          </div>
-          <Link to="/itinerary" className="mt-7 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
-            查看完整行程 <ArrowUpRight className="size-4" />
-          </Link>
-        </article>
-
-        <button type="button" aria-label="查看和编辑旅行备注" onClick={()=>setNoteEditor({tripId:selectedTrip.id,draft:selectedTrip.travelNote??''})} className="group rounded-3xl bg-ink p-6 text-left text-white shadow-card sm:p-7">
-          <div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-white/55">Trip note</p><h2 className="mt-2 text-lg font-bold">旅行备注</h2></div><span className="grid size-9 place-items-center rounded-full bg-white/10 text-white/70 group-hover:bg-white/15 group-hover:text-white"><Pencil className="size-4"/></span></div>
-          {selectedTrip.travelNote?<p className="mt-5 line-clamp-4 whitespace-pre-wrap text-base leading-7 text-white/85">{selectedTrip.travelNote}</p>:<div className="mt-6 flex items-center gap-3 rounded-2xl border border-dashed border-white/20 p-4 text-sm font-semibold text-white/70"><FileText className="size-5"/>添加旅行备注</div>}
-          <p className="mt-7 text-xs text-white/45">记录整趟旅行需要随时记住的信息</p>
-        </button>
+        <article className="rounded-3xl border border-line bg-white p-6 shadow-card sm:p-7"><p className="text-xs font-bold tracking-[0.14em] text-brand">{status === 'active' ? 'TODAY / NEXT' : 'NEXT UP'}</p><h2 className="mt-2 text-xl font-bold">{nextItem?.placeName ?? '还没有行程安排'}</h2><div className="mt-6 border-l-2 border-brand-soft pl-5"><p className="text-sm font-semibold">{nextItem && nextItemDay ? `${nextItem.time ?? '灵活时间'} · ${formatDayDate(nextItemDay.date)}` : '从每日行程开始规划第一站'}</p><p className="mt-1 text-sm leading-6 text-muted">{nextItem?.notes || '添加地点、时间和停留时长后，会在这里显示下一项安排。'}</p></div><Link to="/itinerary" className="mt-7 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">查看完整行程 <ArrowUpRight className="size-4" /></Link></article>
+        <button type="button" aria-label="查看和编辑旅行备注" onClick={() => setNoteEditor(selectedTrip.travelNote ?? '')} className="group rounded-3xl bg-brand-soft p-6 text-left shadow-card sm:p-7"><div className="flex items-center justify-between"><div><p className="text-xs font-bold tracking-[0.14em] text-brand">TRIP NOTE</p><h2 className="mt-2 text-lg font-bold">旅行备注</h2></div><Pencil className="size-4 text-brand" /></div>{selectedTrip.travelNote ? <p className="mt-5 line-clamp-5 whitespace-pre-wrap text-sm leading-7">{selectedTrip.travelNote}</p> : <div className="mt-6 flex items-center gap-3 rounded-2xl border border-dashed border-brand/25 p-4 text-sm font-semibold text-brand"><FileText className="size-5" />添加旅行备注</div>}</button>
       </div>
 
-      {noteEditor?.tripId===selectedTrip.id?<form aria-label="编辑旅行备注" onSubmit={event=>{event.preventDefault();void updateTrip(noteEditor.tripId,{travelNote:noteEditor.draft||null}).then(()=>setNoteEditor(null)).catch(()=>undefined)}} className="mt-6 rounded-3xl border border-brand/20 bg-white p-5 shadow-card sm:p-7"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold text-brand">TRIP NOTE</p><h2 className="mt-1 text-xl font-bold">编辑旅行备注</h2><p className="mt-1 text-sm text-muted">旅行目标、重要提醒、主题或任何需要随时查看的信息。</p></div><button type="button" onClick={()=>setNoteEditor(null)} className="text-sm font-semibold text-muted">关闭</button></div><label className="mt-5 block"><span className="field-label">备注内容</span><textarea aria-label="旅行备注" maxLength={10000} value={noteEditor.draft} onChange={event=>setNoteEditor({...noteEditor,draft:event.target.value})} className="field-input min-h-44" placeholder="写下这趟旅行最重要的信息……"/></label><div className="mt-4 flex items-center justify-between gap-3"><span className="text-xs text-muted">{noteEditor.draft.length} / 10000</span><button disabled={isSaving} className="min-h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white disabled:opacity-50">{isSaving?'保存中…':'保存旅行备注'}</button></div></form>:null}
+      {noteEditor !== null ? <form onSubmit={(event) => { event.preventDefault(); void updateTrip(selectedTrip.id, { travelNote: noteEditor.trim() || null }).then(() => setNoteEditor(null)); }} className="mt-6 rounded-3xl border border-brand/20 bg-white p-5 shadow-card sm:p-7"><label><span className="field-label">旅行备注</span><textarea aria-label="旅行备注" maxLength={10000} value={noteEditor} onChange={(event) => setNoteEditor(event.target.value)} className="field-input min-h-40" /></label><div className="mt-4 flex justify-end gap-3"><button type="button" onClick={() => setNoteEditor(null)} className="min-h-11 rounded-xl border border-line px-5 text-sm font-semibold">取消</button><button disabled={isSaving} className="min-h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white">保存旅行备注</button></div></form> : null}
+
+      {editOpen ? <EditTripDialog key={selectedTrip.id} trip={selectedTrip} onClose={() => setEditOpen(false)} /> : null}
     </section>
   );
 }

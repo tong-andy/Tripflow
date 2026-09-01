@@ -94,11 +94,16 @@ describe('Supabase trip repository', () => {
       notes: '',
       status: 'planned',
     });
+    const destinationRow = makeRow({
+      id: 'destination-1', trip_id: 'trip-1', city_name: '杭州', country_name: '中国',
+      latitude: 30.2741, longitude: 120.1551, sort_order: 0,
+    });
     const { client, builders } = createMockClient({
       trips: [{ data: [tripRow], error: null }],
       trip_days: [{ data: [dayRow], error: null }],
       preparation_items: [{ data: [preparationRow], error: null }],
       itinerary_items: [{ data: [itineraryRow], error: null }],
+      trip_destinations: [{ data: [destinationRow], error: null }],
     });
 
     const trips = await createSupabaseTripRepository(client).listTrips('user-1');
@@ -109,10 +114,28 @@ describe('Supabase trip repository', () => {
       days: [{ id: 'day-1', dayNumber: 1 }],
       preparationItems: [{ id: 'prep-1', category: 'documents' }],
       itineraryItems: [{ id: 'item-1', time: '09:30' }],
+      destinations: [{ id: 'destination-1', cityName: '杭州', countryName: '中国' }],
     });
     for (const { builder } of builders) {
       expect(builder.eq).toHaveBeenCalledWith('user_id', 'user-1');
     }
+  });
+
+  it('replaces destinations through the authenticated trip-scoped RPC', async () => {
+    const destinationRow = makeRow({ id: 'destination-2', trip_id: 'trip-1', city_name: '苏州', country_name: '中国', latitude: 31.2989, longitude: 120.5853, sort_order: 0 });
+    const { client, rpc } = createMockClient({
+      trips: [{ data: [tripRow], error: null }], trip_days: [{ data: [dayRow], error: null }],
+      preparation_items: [{ data: [], error: null }], itinerary_items: [{ data: [], error: null }],
+      trip_destinations: [{ data: [destinationRow], error: null }],
+    });
+    const result = await createSupabaseTripRepository(client).replaceTripDestinations('user-1', 'trip-1', [
+      { cityName: '苏州', countryName: '中国', latitude: 31.2989, longitude: 120.5853 },
+    ]);
+    expect(rpc).toHaveBeenCalledWith('replace_trip_destinations', {
+      p_trip_id: 'trip-1',
+      p_destinations: [{ city_name: '苏州', country_name: '中国', latitude: 31.2989, longitude: 120.5853 }],
+    });
+    expect(result.destinations[0]?.cityName).toBe('苏州');
   });
 
   it('uses the atomic RPC to create a trip and its days', async () => {
@@ -122,6 +145,7 @@ describe('Supabase trip repository', () => {
         trip_days: [{ data: [dayRow], error: null }],
         preparation_items: [{ data: [], error: null }],
         itinerary_items: [{ data: [], error: null }],
+        trip_destinations: [{ data: [], error: null }],
       },
       { data: 'trip-1', error: null },
     );
@@ -135,16 +159,18 @@ describe('Supabase trip repository', () => {
         startDate: '2026-11-06',
         endDate: '2026-11-08',
         timezone: 'Asia/Shanghai',
+        destinations: [{ cityName: '杭州', countryName: '中国', latitude: 30.2741, longitude: 120.1551 }],
       },
     );
 
-    expect(rpc).toHaveBeenCalledWith('create_trip_with_days_v2', {
+    expect(rpc).toHaveBeenCalledWith('create_trip_with_days_v3', {
       p_name: '杭州周末',
       p_destination: '杭州',
       p_departure_location: '上海',
       p_start_date: '2026-11-06',
       p_end_date: '2026-11-08',
       p_timezone: 'Asia/Shanghai',
+      p_destinations: [{ city_name: '杭州', country_name: '中国', latitude: 30.2741, longitude: 120.1551 }],
     });
     expect(trip.id).toBe('trip-1');
   });

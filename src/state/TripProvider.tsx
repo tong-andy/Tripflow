@@ -11,6 +11,7 @@ import type {
   ItineraryStatus,
   PreparationItem,
   Trip,
+  TripDestinationInput,
   UpdateItineraryItemInput,
   UpdateTripInput,
 } from '../types/trip';
@@ -173,6 +174,28 @@ export function TripProvider({
     });
   }
 
+  async function replaceTripDestinations(
+    tripId: string,
+    destinations: TripDestinationInput[],
+  ): Promise<Trip> {
+    const userId = requireUserId();
+    return performMutation(async () => {
+      const trip = await repository.replaceTripDestinations(
+        userId,
+        tripId,
+        destinations,
+      );
+      assertActiveUser(userId);
+      setState((current) => ({
+        ...current,
+        trips: current.trips.map((item) =>
+          item.id === trip.id ? trip : item,
+        ),
+      }));
+      return trip;
+    });
+  }
+
   async function deleteTrip(tripId: string): Promise<void> {
     const userId = requireUserId();
     return performMutation(async () => {
@@ -222,7 +245,7 @@ export function TripProvider({
 
   async function updatePreparationItem(
     itemId: string,
-    updates: Pick<PreparationItem, 'title' | 'category'>,
+    updates: Pick<PreparationItem, 'title' | 'category' | 'notes'>,
   ): Promise<PreparationItem> {
     const userId = requireUserId();
     return performMutation(async () => {
@@ -403,6 +426,7 @@ export function TripProvider({
     clearError: () => setError(null),
     addTrip,
     updateTrip,
+    replaceTripDestinations,
     deleteTrip,
     addPreparationItem,
     updatePreparationItem,

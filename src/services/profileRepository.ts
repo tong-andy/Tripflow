@@ -15,7 +15,7 @@ import { getSupabaseClient } from './supabase';
 type ProfileRow = Database['public']['Tables']['user_profiles']['Row'];
 
 export interface ProfileRepository {
-  loadProfile(userId: string, year: number): Promise<ProfileData>;
+  loadProfile(userId: string): Promise<ProfileData>;
   saveProfile(
     userId: string,
     input: UpdateUserProfileInput,
@@ -84,10 +84,8 @@ export function createSupabaseProfileRepository(
 ): ProfileRepository {
   const database = () => client ?? getSupabaseClient();
   return {
-    async loadProfile(userId, year) {
+    async loadProfile(userId) {
       assertUser(userId);
-      const start = `${year}-01-01`;
-      const end = `${year + 1}-01-01`;
       const [profileResult, expensesResult, purchasesResult, mediaResult] = await Promise.all([
         database()
           .from('user_profiles')
@@ -98,15 +96,11 @@ export function createSupabaseProfileRepository(
           .from('expenses')
           .select('*')
           .eq('user_id', userId)
-          .gte('date', start)
-          .lt('date', end)
           .order('date', { ascending: false }),
         database()
           .from('purchases')
           .select('*')
           .eq('user_id', userId)
-          .gte('date', start)
-          .lt('date', end)
           .order('date', { ascending: false }),
         database()
           .from('media_notes')
@@ -127,8 +121,8 @@ export function createSupabaseProfileRepository(
           !storedProfile.recordPreferencesConfigured && hasMediaNotes
             ? { ...storedProfile, showMediaNotes: true }
             : storedProfile,
-        annualExpenses: (expensesResult.data ?? []).map(mapExpense) as Expense[],
-        annualPurchases: (purchasesResult.data ?? []).map(mapPurchase),
+        expenses: (expensesResult.data ?? []).map(mapExpense) as Expense[],
+        purchases: (purchasesResult.data ?? []).map(mapPurchase),
       };
     },
 

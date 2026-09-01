@@ -1,8 +1,10 @@
 export type PreparationCategory =
+  | 'transit'
+  | 'accommodation'
   | 'documents'
-  | 'booking'
-  | 'packing'
-  | 'other';
+  | 'activities'
+  | 'connectivity'
+  | 'essentials';
 
 export type ItineraryStatus = 'planned' | 'completed' | 'skipped';
 
@@ -13,12 +15,30 @@ export interface TripDay {
   date: string;
 }
 
+export interface TripDestination {
+  id: string;
+  tripId: string;
+  cityName: string;
+  countryName: string;
+  latitude: number;
+  longitude: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TripDestinationInput = Pick<
+  TripDestination,
+  'cityName' | 'countryName' | 'latitude' | 'longitude'
+>;
+
 export interface PreparationItem {
   id: string;
   tripId: string;
   title: string;
   category: PreparationCategory;
   completed: boolean;
+  notes: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,6 +67,7 @@ export interface Trip {
   days: TripDay[];
   preparationItems: PreparationItem[];
   itineraryItems: ItineraryItem[];
+  destinations: TripDestination[];
   budgetAmount: number | null;
   budgetCurrency: string | null;
   timezone: string;
@@ -62,6 +83,7 @@ export interface CreateTripInput {
   startDate: string;
   endDate: string;
   timezone?: string;
+  destinations: TripDestinationInput[];
 }
 
 export type UpdateTripInput = Partial<
@@ -76,6 +98,7 @@ export interface CreateTripDayInput {
 export interface CreatePreparationItemInput {
   title: string;
   category: PreparationCategory;
+  notes: string;
 }
 
 export interface CreateItineraryItemInput {

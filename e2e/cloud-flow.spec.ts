@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { installCloudApiMock } from './cloud';
+import { installCloudApiMock, selectDestinationCity } from './cloud';
 
 test('persists the core travel flow across refresh and login sessions', async ({
   page,
@@ -14,23 +14,24 @@ test('persists the core travel flow across refresh and login sessions', async ({
   await expect(page.getByText('还没有云端旅行')).toBeVisible();
   await page.getByRole('button', { name: '新建旅行' }).first().click();
   await page.getByLabel('旅行名称').fill('杭州周末');
-  await page.getByLabel('目的地').fill('杭州');
+  await selectDestinationCity(page, '杭州');
   await page.getByLabel('出发地').fill('上海');
   await page.getByLabel('出发日期').fill('2026-11-06');
   await page.getByLabel('返程日期').fill('2026-11-08');
   await page.getByRole('button', { name: '创建旅行' }).click();
 
   await expect(page).toHaveURL(/\/overview$/);
-  await expect(page.getByText('杭州周末 · 2026年11月6日 — 11月8日')).toBeVisible();
-  await expect(page.getByText('3 天', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '杭州周末' })).toBeVisible();
+  await expect(page.getByText('2026年11月6日 — 11月8日')).toBeVisible();
+  await expect(page.getByText(/· 3 天/)).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText('杭州周末 · 2026年11月6日 — 11月8日')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '杭州周末' })).toBeVisible();
 
   await page.getByRole('link', { name: '准备', exact: true }).click();
-  await page.getByRole('button', { name: '添加事项' }).click();
+  await page.getByRole('button', { name: '新增准备事项' }).click();
   await page.getByLabel('事项名称').fill('打印车票');
-  await page.getByLabel('分类').selectOption('booking');
+  await page.getByLabel('分类').selectOption('activities');
   await page.getByRole('button', { name: '添加', exact: true }).click();
   await expect(page.getByText('打印车票')).toBeVisible();
   await page.getByRole('button', { name: '标记完成：打印车票' }).click();

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { buildTripDays } from '../domain/trips';
+import { normalizePreparationCategory } from '../domain/preparation';
 import type { Database } from '../types/database';
 import type {
   CreateItineraryItemInput,
@@ -8,9 +9,10 @@ import type {
   CreateTripInput,
   ItineraryItem,
   ItineraryStatus,
-  PreparationCategory,
   PreparationItem,
   Trip,
+  TripDestination,
+  TripDestinationInput,
   TripDay,
   UpdateItineraryItemInput,
   UpdateTripInput,
@@ -19,6 +21,8 @@ import { getSupabaseClient } from './supabase';
 
 type TripRow = Database['public']['Tables']['trips']['Row'];
 type TripDayRow = Database['public']['Tables']['trip_days']['Row'];
+type TripDestinationRow =
+  Database['public']['Tables']['trip_destinations']['Row'];
 type PreparationRow =
   Database['public']['Tables']['preparation_items']['Row'];
 type ItineraryRow = Database['public']['Tables']['itinerary_items']['Row'];
@@ -30,6 +34,11 @@ export interface TripRepository {
     userId: string,
     tripId: string,
     input: UpdateTripInput,
+  ) => Promise<Trip>;
+  replaceTripDestinations: (
+    userId: string,
+    tripId: string,
+    destinations: TripDestinationInput[],
   ) => Promise<Trip>;
   deleteTrip: (userId: string, tripId: string) => Promise<void>;
   listTripDays: (userId: string, tripId: string) => Promise<TripDay[]>;
@@ -46,7 +55,9 @@ export interface TripRepository {
   updatePreparationItem: (
     userId: string,
     itemId: string,
-    updates: Partial<Pick<PreparationItem, 'title' | 'category' | 'completed'>>,
+    updates: Partial<
+      Pick<PreparationItem, 'title' | 'category' | 'completed' | 'notes'>
+    >,
   ) => Promise<PreparationItem>;
   deletePreparationItem: (userId: string, itemId: string) => Promise<void>;
   createItineraryItem: (
@@ -82,10 +93,6 @@ function throwRepositoryError(error: { message: string } | null): void {
   throw new Error('云端数据操作失败，请稍后重试。');
 }
 
-function isPreparationCategory(value: string): value is PreparationCategory {
-  return ['documents', 'booking', 'packing', 'other'].includes(value);
-}
-
 function isItineraryStatus(value: string): value is ItineraryStatus {
   return ['planned', 'completed', 'skipped'].includes(value);
 }
@@ -99,16 +106,32 @@ export function mapTripDay(row: TripDayRow): TripDay {
   };
 }
 
+export function mapTripDestination(row: TripDestinationRow): TripDestination {
+  return {
+    id: row.id,
+    tripId: row.trip_id,
+    cityName: row.city_name,
+    countryName: row.country_name,
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function mapPreparationItem(row: PreparationRow): PreparationItem {
-  if (!isPreparationCategory(row.category)) {
+  const category = normalizePreparationCategory(row.category);
+  if (!category) {
     throw new Error('云端准备事项分类无效。');
   }
   return {
     id: row.id,
     tripId: row.trip_id,
     title: row.title,
-    category: row.category,
+    category,
     completed: row.completed,
+    notes: row.notes ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -138,6 +161,7 @@ function mapTrips(
   dayRows: TripDayRow[],
   preparationRows: PreparationRow[],
   itineraryRows: ItineraryRow[],
+  destinationRows: TripDestinationRow[],
 ): Trip[] {
   return tripRows.map((row) => ({
     id: row.id,
@@ -156,6 +180,10 @@ function mapTrips(
     itineraryItems: itineraryRows
       .filter((item) => item.trip_id === row.id)
       .map(mapItineraryItem),
+    destinations: destinationRows
+      .filter((destination) => destination.trip_id === row.id)
+      .sort((left, right) => left.sort_order - right.sort_order)
+      .map(mapTripDestination),
     budgetAmount: row.budget_amount == null ? null : Number(row.budget_amount),
     budgetCurrency: row.budget_currency ?? null,
     timezone: row.timezone ?? 'Asia/Shanghai',
@@ -172,7 +200,7 @@ export function createSupabaseTripRepository(
   const repository: TripRepository = {
     async listTrips(userId) {
       assertUserId(userId);
-      const [trips, days, preparationItems, itineraryItems] =
+      const [trips, days, preparationItems, itineraryItems, destinations] =
         await Promise.all([
           database()
             .from('trips')
@@ -194,18 +222,25 @@ export function createSupabaseTripRepository(
             .select('*')
             .eq('user_id', userId)
             .order('created_at', { ascending: true }),
+          database()
+            .from('trip_destinations')
+            .select('*')
+            .eq('user_id', userId)
+            .order('sort_order', { ascending: true }),
         ]);
 
       throwRepositoryError(trips.error);
       throwRepositoryError(days.error);
       throwRepositoryError(preparationItems.error);
       throwRepositoryError(itineraryItems.error);
+      throwRepositoryError(destinations.error);
 
       return mapTrips(
         trips.data ?? [],
         days.data ?? [],
         preparationItems.data ?? [],
         itineraryItems.data ?? [],
+        destinations.data ?? [],
       );
     },
 
@@ -222,11 +257,14 @@ export function createSupabaseTripRepository(
         throw new Error('请完整填写旅行信息。');
       }
       buildTripDays('date-validation', input.startDate, input.endDate);
+      if (input.destinations.length === 0) {
+        throw new Error('请至少添加一个目的地城市。');
+      }
       const timezone = input.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'Asia/Shanghai';
       assertTimezone(timezone);
 
       const { data: tripId, error } = await database().rpc(
-        'create_trip_with_days_v2',
+        'create_trip_with_days_v3',
         {
           p_name: input.name.trim(),
           p_destination: input.destination.trim(),
@@ -234,6 +272,12 @@ export function createSupabaseTripRepository(
           p_start_date: input.startDate,
           p_end_date: input.endDate,
           p_timezone: timezone,
+          p_destinations: input.destinations.map((destination) => ({
+            city_name: destination.cityName,
+            country_name: destination.countryName,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+          })),
         },
       );
       throwRepositoryError(error);
@@ -242,6 +286,25 @@ export function createSupabaseTripRepository(
       const trips = await repository.listTrips(userId);
       const trip = trips.find((candidate) => candidate.id === tripId);
       if (!trip) throw new Error('旅行已创建，但暂时无法读取，请刷新重试。');
+      return trip;
+    },
+
+    async replaceTripDestinations(userId, tripId, destinations) {
+      assertUserId(userId);
+      const { error } = await database().rpc('replace_trip_destinations', {
+        p_trip_id: tripId,
+        p_destinations: destinations.map((destination) => ({
+          city_name: destination.cityName,
+          country_name: destination.countryName,
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+        })),
+      });
+      throwRepositoryError(error);
+
+      const trips = await repository.listTrips(userId);
+      const trip = trips.find((candidate) => candidate.id === tripId);
+      if (!trip) throw new Error('找不到需要更新目的地的旅行。');
       return trip;
     },
 
@@ -331,6 +394,7 @@ export function createSupabaseTripRepository(
           trip_id: tripId,
           title: input.title.trim(),
           category: input.category,
+          notes: input.notes.trim(),
         })
         .select('*')
         .single();
@@ -346,6 +410,7 @@ export function createSupabaseTripRepository(
       if (updates.title !== undefined) update.title = updates.title.trim();
       if (updates.category !== undefined) update.category = updates.category;
       if (updates.completed !== undefined) update.completed = updates.completed;
+      if (updates.notes !== undefined) update.notes = updates.notes.trim();
       const { data, error } = await database()
         .from('preparation_items')
         .update(update)

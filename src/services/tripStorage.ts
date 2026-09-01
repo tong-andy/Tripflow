@@ -1,4 +1,5 @@
 import { seedTrip } from '../data/seed';
+import { normalizePreparationCategory } from '../domain/preparation';
 import type { Trip } from '../types/trip';
 
 export const TRIP_STORAGE_KEY = 'tripflow:phase-02a:v1';
@@ -68,6 +69,12 @@ export function loadTripState(storage: Storage | undefined): TripState {
       trips: parsed.trips.map((trip) => ({
         ...trip,
         travelNote: trip.travelNote ?? null,
+        destinations: trip.destinations ?? [],
+        preparationItems: trip.preparationItems.map((item) => ({
+          ...item,
+          category: normalizePreparationCategory(item.category) ?? 'essentials',
+          notes: item.notes ?? '',
+        })),
       })),
       selectedTripId: selectedTripExists
         ? parsed.selectedTripId

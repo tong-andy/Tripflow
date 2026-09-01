@@ -6,6 +6,7 @@ import type { CreateTripInput } from '../../types/trip';
 import { getTripStatus } from '../../domain/travelMode';
 import { TimezoneCombobox } from '../ui/TimezoneCombobox';
 import { useProfile } from '../../state/useProfile';
+import { DestinationManager } from './DestinationManager';
 
 interface NewTripDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ const emptyForm: CreateTripInput = {
   startDate: '',
   endDate: '',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai',
+  destinations: [],
 };
 
 export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
@@ -32,7 +34,7 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
   useEffect(() => {
     if (!open || !profile?.defaultTimezone) return;
     queueMicrotask(() => setForm((current) =>
-      current.name || current.destination || current.departureLocation || current.startDate || current.endDate
+      current.name || current.destinations.length || current.departureLocation || current.startDate || current.endDate
         ? current
         : { ...current, timezone: profile.defaultTimezone },
     ));
@@ -62,7 +64,14 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
 
     setIsSubmitting(true);
     try {
-      const trip = await addTrip(form);
+      if (form.destinations.length === 0) {
+        setError('请至少添加一个目的地城市。');
+        return;
+      }
+      const trip = await addTrip({
+        ...form,
+        destination: form.destinations.map((city) => city.cityName).join(' · '),
+      });
       handleClose();
       const mobileActive = window.matchMedia('(max-width: 767px)').matches && getTripStatus(trip) === 'active';
       void navigate(mobileActive ? '/today' : '/overview', { replace: true });
@@ -128,18 +137,6 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
 
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block">
-              <span className="field-label">目的地</span>
-              <input
-                required
-                value={form.destination}
-                onChange={(event) =>
-                  updateField('destination', event.target.value)
-                }
-                className="field-input"
-                placeholder="例如：大阪、京都"
-              />
-            </label>
-            <label className="block">
               <span className="field-label">出发地</span>
               <input
                 required
@@ -152,6 +149,14 @@ export function NewTripDialog({ open, onClose }: NewTripDialogProps) {
               />
             </label>
           </div>
+
+          <DestinationManager
+            value={form.destinations}
+            onChange={(destinations) => {
+              setForm((current) => ({ ...current, destinations }));
+              setError('');
+            }}
+          />
 
           <div>
             <TimezoneCombobox

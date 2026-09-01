@@ -39,6 +39,7 @@ describe('trip domain', () => {
         departureLocation: '  上海  ',
         startDate: '2027-01-04',
         endDate: '2027-01-06',
+        destinations: [{ cityName: '札幌', countryName: '日本', latitude: 43.0618, longitude: 141.3545 }],
       },
       sequentialIdFactory(),
       new Date('2026-08-30T00:00:00.000Z'),
@@ -92,4 +93,3 @@ describe('trip domain', () => {
     ]);
   });
 });
-
