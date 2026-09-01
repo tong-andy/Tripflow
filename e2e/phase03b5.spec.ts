@@ -22,7 +22,10 @@ async function createTrip(page: Page, name: string, city: string, start: string,
 test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, overview and preparation', async ({ page }) => {
   await installCloudApiMock(page);
   await login(page);
+  await expect(page.getByRole('img', { name: /显示 0 个去过的城市/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: '聚焦足迹' })).toBeDisabled();
   await createTrip(page, '2025 东京', '东京', '2025-06-01', '2025-06-03');
+  await createTrip(page, '2025 镰仓', '镰仓', '2025-07-01', '2025-07-02');
   await createTrip(page, '2026 巴黎', '巴黎', '2026-10-01', '2026-10-05');
   await page.goto('/trips');
 
@@ -36,15 +39,38 @@ test('Phase 03B.5 keeps one responsive IA and connects footprint, timeline, over
 
   await expect(page.getByRole('region', { name: '世界旅行足迹' })).toBeVisible();
   await expect(page.getByTestId('world-country-boundaries')).toHaveAttribute('href', '/data/world-110m.svg');
+  const footprint = page.getByTestId('travel-footprint-svg');
+  await expect(footprint).toHaveAttribute('data-view-box', '0 35 1000 375');
+  await page.getByRole('button', { name: '聚焦足迹' }).click();
+  await expect(footprint).toHaveAttribute('data-view-mode', 'focus');
+  await expect(footprint).not.toHaveAttribute('data-view-box', '0 35 1000 375');
+  await page.getByRole('button', { name: '全球', exact: true }).click();
   await expect(page.getByRole('region', { name: '旅行时间轴' })).toContainText('2026 巴黎');
   await page.getByRole('button', { name: '2025', exact: true }).click();
-  await expect(page.getByRole('img', { name: /显示 1 个去过的城市/ })).toBeVisible();
+  await expect(page.getByRole('img', { name: /显示 2 个去过的城市/ })).toBeVisible();
   await expect(page.getByRole('region', { name: '旅行时间轴' })).toContainText('2025 东京');
   await expect(page.getByRole('region', { name: '旅行时间轴' })).not.toContainText('2026 巴黎');
-  await page.getByLabel('查看城市：东京').click();
-  await expect(page.getByRole('region', { name: '世界旅行足迹' }).getByRole('status')).toContainText('2025 东京');
+  if (page.viewportSize()!.width < 640) {
+    const nearbyCluster = page.getByLabel(/查看城市群：.*东京.*镰仓|查看城市群：.*镰仓.*东京/);
+    await expect(nearbyCluster).toBeVisible();
+    await nearbyCluster.click();
+    await expect(footprint).toHaveAttribute('data-view-mode', 'focus');
+    await nearbyCluster.click();
+    const clusterDetails = page.getByRole('region', { name: '世界旅行足迹' }).getByRole('status');
+    await expect(clusterDetails).toContainText('东京 · 日本');
+    await expect(clusterDetails).toContainText('镰仓 · 日本');
+    await expect(clusterDetails).toContainText('1 趟关联旅行');
+  } else {
+    await page.getByLabel('查看城市：镰仓').click();
+    await expect(page.getByRole('region', { name: '世界旅行足迹' }).getByRole('status')).toContainText('2025 镰仓');
+  }
   await page.getByRole('button', { name: '全部', exact: true }).click();
-  await expect(page.getByRole('img', { name: /显示 2 个去过的城市/ })).toBeVisible();
+  await expect(page.getByRole('img', { name: /显示 3 个去过的城市/ })).toBeVisible();
+  if (page.viewportSize()!.width < 640) {
+    await expect(page.getByRole('button', { name: '查看城市：巴黎' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /查看城市群/ })).toBeVisible();
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
   await page.getByRole('button', { name: '打开设置' }).click();
   await expect(page.getByRole('dialog', { name: '设置' })).toBeVisible();
